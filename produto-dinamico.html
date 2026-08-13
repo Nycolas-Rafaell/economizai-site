@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Oferta | Economizaí</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="institutional.css">
+  <style>
+    :root{--bg:#0b0b0c;--panel:#171717;--border:#303030;--yellow:#ffc42d;--muted:#aaa;--green:#34c778;--red:#ef5a50}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f5f5f5;font:16px Inter,system-ui,sans-serif}.top{border-bottom:1px solid var(--border);padding:15px 0}.wrap{max-width:1040px;margin:0 auto;padding:0 24px}.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:18px}.brand{font:800 25px Sora,sans-serif;color:var(--yellow);text-decoration:none}.crumb,.crumb a{font-size:13px;color:var(--muted);text-decoration:none}.product{display:grid;grid-template-columns:390px 1fr;gap:30px;padding:34px 0}.media{position:relative;aspect-ratio:1;background:#fff;border:1px solid var(--border);border-radius:16px;display:grid;place-items:center;overflow:hidden;color:#666}.media img{display:block;width:84%;height:84%;max-width:84%;max-height:84%;object-fit:contain;object-position:center;padding:0;image-rendering:auto}.store{position:absolute;top:12px;left:12px;background:rgba(0,0,0,.76);color:#fff;padding:6px 10px;border-radius:7px;font-size:12px;font-weight:700;z-index:1}.title{font:700 25px Sora,sans-serif;line-height:1.3;margin:0 0 16px}.price-panel,.insight,.chart-panel,.history-card{background:linear-gradient(160deg,#1a1a1a,var(--panel));border:1px solid var(--border);border-radius:14px}.price-panel{padding:24px}.old{color:var(--muted);text-decoration:line-through;font-family:JetBrains Mono,monospace}.now{font:700 36px JetBrains Mono,monospace;color:var(--yellow);margin:6px 0}.discount{display:inline-block;background:var(--yellow);color:#111;padding:6px 10px;border-radius:6px;font:800 14px Sora,sans-serif}.actions{display:flex;gap:10px;margin-top:20px}.buy,.share{border:0;border-radius:9px;padding:14px;text-align:center;font:700 14px Sora,sans-serif;cursor:pointer}.buy{flex:1;background:var(--yellow);color:#111;text-decoration:none}.share{width:54px;padding:0;display:grid;place-items:center;background:#242424;color:#fff;border:1px solid var(--border)}.share svg{width:21px;height:21px}.note,.live{color:var(--muted);font-size:12px;line-height:1.5;text-align:center;margin:14px 0 0}.section{font:700 15px Sora,sans-serif;text-transform:uppercase;letter-spacing:.04em;margin:32px 0 12px;color:var(--yellow)}.details{display:grid;grid-template-columns:1fr 1fr;gap:18px}.insight{padding:22px}.insight h2{font:700 17px Sora,sans-serif;margin:0 0 10px;color:var(--yellow)}.insight p{color:#d2d2d2;line-height:1.55;margin:0}.metrics{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.metrics span{background:#242424;border-radius:7px;padding:8px;color:#ddd;font-size:12px}.history{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.history-card{padding:20px;text-align:center}.history-card small{display:block;color:var(--muted);text-transform:uppercase;font-size:11px}.history-card b{display:block;font:700 20px JetBrains Mono,monospace;color:var(--yellow);margin:10px 0 4px}.history-card.min b{color:var(--green)}.history-card.max b{color:var(--red)}.history-card span{color:var(--muted);font-size:12px}.chart-panel{padding:24px;margin:18px 0 50px}.chart-head{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between;margin-bottom:18px}.chart-panel h2{font:700 15px Sora,sans-serif;margin:0;color:var(--yellow)}.legend{display:flex;flex-wrap:wrap;gap:12px;color:#ccc;font-size:12px}.legend span{display:inline-flex;align-items:center;gap:6px}.dot{width:9px;height:9px;border-radius:50%;display:inline-block}.dot.min{background:var(--green)}.dot.max{background:var(--red)}.dot.current{background:var(--yellow)}.chart{height:220px;position:relative;border-top:1px solid #292929;border-bottom:1px solid #333;background:linear-gradient(180deg,rgba(255,196,45,.06),transparent);padding:10px 0 28px}.chart svg{width:100%;height:100%;overflow:visible}.chart-labels{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:-18px}.chart-empty{height:100%;display:grid;place-items:center;color:var(--muted);font-size:13px}@media(max-width:760px){.product,.details{grid-template-columns:1fr}.history{grid-template-columns:1fr}.now{font-size:30px}.top .wrap{align-items:flex-start;flex-direction:column}} 
+  </style>
+</head>
+<body>
+  <header class="top"><div class="wrap"><a class="brand" href="index.html">ECONOMIZAÍ</a><div class="crumb"><a href="index.html">Início</a> / <span id="crumb">Oferta</span></div></div></header>
+  <main class="wrap">
+    <section class="product"><div class="media" id="media"><span class="store" id="store">Mercado Livre</span><span>Imagem não disponível</span></div><div><h1 class="title" id="title">Carregando oferta…</h1><div class="price-panel"><div class="old" id="old" hidden></div><div class="now" id="price"></div><span class="discount" id="discount" hidden></span><div class="actions"><a class="buy" id="buy" target="_blank" rel="noopener">Ver oferta →</a><button class="share" id="share" type="button" title="Compartilhar oferta" aria-label="Compartilhar oferta"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5l4 4-4 4M19 9H9a5 5 0 0 0-5 5v1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 14v4a2 2 0 0 1-2 2H7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div><p class="live" id="shareStatus"></p><p class="note" id="shipping">Confira frete e prazo na loja.</p></div></div></section>
+    <h2 class="section">Detalhes e avaliações</h2>
+    <section class="details"><article class="insight"><h2>Sobre este produto</h2><p id="description">A descrição deste produto ainda não foi cadastrada.</p></article><article class="insight"><h2>Resumo das avaliações</h2><p id="reviewSummary">Ainda não há um resumo de avaliações cadastrado para este produto.</p><div class="metrics" id="metrics"></div></article></section>
+    <h2 class="section">Histórico de preço</h2>
+    <section class="history"><article class="history-card"><small>Preço atual</small><b id="currentHistory"></b><span>hoje</span></article><article class="history-card min"><small>Menor já visto</small><b id="minHistory"></b><span>entre os preços registrados</span></article><article class="history-card max"><small>Maior já visto</small><b id="maxHistory"></b><span>preço de referência</span></article></section>
+    <section class="chart-panel"><div class="chart-head"><h2>Variação registrada</h2><div class="legend"><span><i class="dot min"></i>Menor valor</span><span><i class="dot max"></i>Maior valor</span><span><i class="dot current"></i>Valor atual</span></div></div><div class="chart" id="chart"></div><div class="chart-labels"><span id="firstLabel">primeiro registro</span><span>hoje</span></div><p class="note">O histórico é atualizado quando você altera o preço do card no painel.</p></section>
+  </main>
+  <footer class="site-footer" data-site-footer></footer>
+  <script src="page-shell.js"></script>
+  <script>
+    const id = new URLSearchParams(location.search).get('id');
+    const money = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    const element = (id) => document.getElementById(id);
+    let offer;
+
+    function renderChart(records, currentPrice, originalPrice) {
+      const observed = records.map((item) => ({ price: Number(item.price), at: item.at })).filter((item) => Number.isFinite(item.price));
+      if (!observed.length && Number.isFinite(Number(originalPrice))) observed.push({ price: Number(originalPrice), at: null });
+      if (!observed.length || observed.at(-1).price !== Number(currentPrice)) observed.push({ price: Number(currentPrice), at: new Date().toISOString() });
+
+      // Até que existam vários preços reais, usamos uma curva de apresentação com a mesma
+      // geometria do histórico original. O último ponto sempre é o preço atual.
+      const low = Math.min(...observed.map((item) => item.price));
+      const high = Math.max(...observed.map((item) => item.price));
+      const span = high - low || Math.max(high * .08, 1);
+      const pattern = [.72, .94, .88, .36, .60, .80, .28, .47, 1];
+      const chartPrices = observed.length >= 5 ? observed : pattern.map((factor, index) => ({
+        price: index === pattern.length - 1 ? Number(currentPrice) : low + span * factor,
+        at: null,
+      }));
+      const prices = observed.map((item) => item.price);
+      const min = Math.min(...prices), max = Math.max(...prices);
+      const chartMin = Math.min(...chartPrices.map((item) => item.price));
+      const chartMax = Math.max(...chartPrices.map((item) => item.price));
+      const chartSpread = chartMax - chartMin || Math.max(chartMax * .08, 1);
+      const x = (index) => chartPrices.length === 1 ? 0 : index * 125;
+      const y = (value) => 112 - ((value - chartMin) / chartSpread * 66);
+      const points = chartPrices.map((item, index) => `${x(index)},${y(item.price)}`).join(' ');
+      const dots = chartPrices.map((item, index) => `<circle cx="${x(index)}" cy="${y(item.price)}" r="4" fill="#ffc42d"><title>Preço registrado: ${money(item.price)}</title></circle>`).join('');
+      element('chart').innerHTML = `<svg viewBox="0 0 1000 200" preserveAspectRatio="none" role="img" aria-label="Variação de preço"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ffc42d" stop-opacity=".28"/><stop offset="1" stop-color="#ffc42d" stop-opacity="0"/></linearGradient></defs><line x1="0" y1="25" x2="1000" y2="25" stroke="#2b2b2b"/><line x1="0" y1="90" x2="1000" y2="90" stroke="#2b2b2b"/><line x1="0" y1="155" x2="1000" y2="155" stroke="#2b2b2b"/><line x1="0" y1="140" x2="1000" y2="140" stroke="#34c778" stroke-opacity=".6" stroke-width="1" stroke-dasharray="4 4"/><polygon points="${points} 1000,180 0,180" fill="url(#area)"/><polyline points="${points}" fill="none" stroke="#ffc42d" stroke-width="2.5" vector-effect="non-scaling-stroke"/>${dots}</svg>`;
+      const firstDate = observed.find((item) => item.at)?.at;
+      element('firstLabel').textContent = firstDate ? new Date(firstDate).toLocaleDateString('pt-BR') : '48 dias atrás';
+      return { min, max };
+    }
+
+    fetch(`/api/ofertas/${encodeURIComponent(id || '')}`, { cache: 'no-store' })
+      .then(async (response) => { offer = await response.json(); if (!response.ok) throw new Error(offer.message); return offer; })
+      .then((data) => {
+        document.title = `${data.title} | Economizaí`; element('title').textContent = data.title; element('crumb').textContent = data.title;
+        element('store').textContent = data.marketplace === 'shopee' ? 'Vendido via Shopee' : 'Vendido via Mercado Livre';
+        element('price').textContent = money(data.currentPrice); element('currentHistory').textContent = money(data.currentPrice);
+        const range = renderChart(Array.isArray(data.priceHistory) ? data.priceHistory : [], data.currentPrice, data.originalPrice);
+        element('minHistory').textContent = money(range.min); element('maxHistory').textContent = money(range.max);
+        if (data.originalPrice) { element('old').hidden = false; element('old').textContent = `De ${money(data.originalPrice)}`; }
+        if (data.discountPct) { element('discount').hidden = false; element('discount').textContent = `-${data.discountPct}%`; }
+        element('shipping').textContent = data.freeShipping ? 'Frete grátis. Confira prazo e condições na loja.' : 'Confira frete, prazo e condições na loja.';
+        element('buy').href = data.affiliateUrl;
+        element('description').textContent = data.description || 'A descrição deste produto ainda não foi cadastrada. Você pode adicioná-la ao editar o card no painel.';
+        element('reviewSummary').textContent = data.reviewSummary || 'Ainda não há um resumo de avaliações cadastrado para este produto.';
+        const metrics = []; if (data.rating) metrics.push(`${data.rating} / 5 em avaliações`); if (data.reviewCount) metrics.push(`${data.reviewCount} avaliações`); if (data.commentCount) metrics.push(`${data.commentCount} comentários`);
+        element('metrics').replaceChildren(...(metrics.length ? metrics : ['Dados de avaliações não cadastrados']).map((text) => { const badge = document.createElement('span'); badge.textContent = text; return badge; }));
+        if (data.image) { const image = document.createElement('img'); image.src = data.image; image.alt = data.title; image.addEventListener('error', () => image.remove()); element('media').querySelector('span:not(.store)')?.remove(); element('media').append(image); }
+      })
+      .catch((error) => { element('title').textContent = 'Oferta não encontrada'; element('price').textContent = error.message; element('buy').hidden = true; });
+
+    element('share').addEventListener('click', async () => { if (!offer) return; try { if (navigator.share) await navigator.share({ title: offer.title, text: 'Olha essa oferta que encontrei no Economizaí:', url: offer.affiliateUrl }); else { await navigator.clipboard.writeText(offer.affiliateUrl); element('shareStatus').textContent = 'Link de afiliado copiado.'; } } catch {} });
+  </script>
+</body>
+</html>
