@@ -1,0 +1,10 @@
+{
+  "name": "economizai-site",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Ambiente local de testes do Economizaí",
+  "scripts": {
+    "ml:test": "node ml-test-server.mjs",
+    "check": "node --check ml-test-server.mjs"
+  }
+}
