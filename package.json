@@ -5,5 +5,9 @@
   "scripts": {
     "dev": "node server.mjs",
     "check": "node --check server.mjs"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.3"
   }
 }

@@ -1,0 +1,57 @@
+/* Camada visual comum: preto, amarelo e superfícies discretas. */
+:root { --ui-yellow: #ffc42d; --ui-panel: #171717; --ui-border: #303030; --ui-soft: #a7a7a7; --ui-shadow: 0 18px 45px rgba(0,0,0,.26); }
+html { scroll-behavior: smooth; }
+body { background-color: #0b0b0c; background-image: radial-gradient(900px 380px at 50% -180px, rgba(255,196,45,.10), transparent 68%); }
+::selection { background: var(--ui-yellow); color: #101010; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #101011; }
+::-webkit-scrollbar-thumb { background: #3a3a3a; border: 2px solid #101011; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
+
+input, select, textarea { transition: border-color .18s ease, box-shadow .18s ease, background .18s ease; }
+input:hover, select:hover, textarea:hover { border-color: #535353; }
+input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 4px rgba(255,196,45,.13); }
+button, a { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled), a { transition: transform .16s ease, filter .16s ease, border-color .16s ease, background .16s ease, color .16s ease; }
+button:not(:disabled):active { transform: translateY(1px); }
+
+.site-footer { background: linear-gradient(180deg, #101011, #09090a); }
+.article-card, .intro-card, .contact-card, .panel { box-shadow: var(--ui-shadow); }
+.article-card, .intro-card, .contact-card { border-color: rgba(255,255,255,.13); }
+.article-card:hover, .intro-card:hover { border-color: rgba(255,196,45,.34); }
+.hero { background: radial-gradient(ellipse at 50% -35%, rgba(255,196,45,.20), transparent 58%); }
+.hero h1, .favorites h1, .account h1, .page h1 { letter-spacing: -.035em; }
+
+/* Login e criação de conta. */
+body:has(.login) { position: relative; overflow-x: hidden; background-image: radial-gradient(560px 420px at 16% 8%, rgba(255,196,45,.16), transparent 70%), radial-gradient(560px 420px at 86% 88%, rgba(255,196,45,.06), transparent 68%); }
+body:has(.login)::before { content: ''; position: fixed; inset: 18px; pointer-events: none; border: 1px solid rgba(255,196,45,.10); border-radius: 22px; }
+.login { position: relative; width: min(100% - 36px, 448px); padding: 38px; border-color: rgba(255,196,45,.22); border-radius: 20px; background: linear-gradient(145deg, rgba(31,31,31,.98), rgba(17,17,18,.98)); box-shadow: 0 26px 80px rgba(0,0,0,.52), inset 0 1px 0 rgba(255,255,255,.04); }
+.login .brand { display: flex; align-items: center; gap: 12px; font-size: 31px; letter-spacing: -.045em; }
+.login .brand::before { content: ''; width: 35px; height: 35px; flex: 0 0 35px; background: url('assets/logo-economizai.png') center/contain no-repeat; filter: drop-shadow(0 3px 7px rgba(255,196,45,.20)); }
+.login .tagline { margin: 7px 0 27px; color: #b8b8b8; font-size: 14px; }
+.login .tabs { padding: 4px; border: 1px solid #303030; border-radius: 11px; background: #111; gap: 4px; }
+.login .tab { border: 0; border-radius: 7px; color: #a9a9a9; background: transparent; }
+.login .tab:hover { color: #fff; background: #222; }
+.login .tab.active { background: var(--ui-yellow); color: #16120a; box-shadow: 0 4px 12px rgba(255,196,45,.16); }
+.login label { color: #e6e6e6; font-size: 13px; }
+.login input { min-height: 48px; border-radius: 10px; background: #101011; }
+.login input:focus { background: #141414; }
+.login button.submit { min-height: 48px; border-radius: 10px; box-shadow: 0 8px 22px rgba(255,196,45,.16); }
+.login button.submit:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.login .back { margin-top: 23px; font-size: 13px; color: #eac25d; }
+.login .back:hover { color: var(--ui-yellow); }
+.login .password-guidance { border-color: rgba(255,196,45,.20); background: rgba(255,196,45,.045); }
+.login .status:not(:empty) { padding: 11px 12px; border: 1px solid rgba(255,176,176,.18); border-radius: 9px; background: rgba(255,90,90,.06); font-size: 13px; }
+
+/* Páginas de conta, favoritos e painel. */
+.account .panel, .page .panel { border-color: rgba(255,255,255,.13); background: linear-gradient(145deg, #1a1a1a, #151515); }
+.account .button, .page .submit, .page .tab, .page .check, .page .edit { border-radius: 9px; }
+.favorites .card { box-shadow: 0 10px 24px rgba(0,0,0,.18); }
+.favorites .card:hover { box-shadow: 0 18px 32px rgba(0,0,0,.28); }
+
+@media (max-width: 560px) {
+  body:has(.login)::before { inset: 10px; border-radius: 16px; }
+  .login { width: min(100% - 24px, 448px); padding: 27px 22px; border-radius: 16px; }
+  .login .brand { font-size: 27px; }
+  .login .brand::before { width: 31px; height: 31px; flex-basis: 31px; }
+}

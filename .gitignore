@@ -1,3 +1,4 @@
 # Segredos e dados temporários da integração Mercado Livre
 .env
 .ml_tokens.json
+node_modules/

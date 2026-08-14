@@ -51,6 +51,7 @@
     width: max-content;
     padding-left: 0;
     animation: scroll 18s linear infinite;
+    will-change: transform;
   }
   .ticker-track span { margin: 0 22px; }
   @keyframes scroll {
@@ -183,6 +184,14 @@
   }
   .search-offers::placeholder { color: var(--text-muted); }
   .search-offers:focus { outline: none; border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,196,45,.12); }
+  .advanced-filter { min-width: 145px; border: 1px solid var(--border-soft); border-radius: 8px; background: #151515; color: var(--text-primary); font: inherit; font-size: 13px; padding: 9px 12px; }
+  .advanced-filter:focus { outline: none; border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,196,45,.12); }
+  .offers-layout { display:grid; grid-template-columns:220px minmax(0,1fr); gap:18px; align-items:start; }
+  .offer-sidebar { padding:16px; background:#151515; border:1px solid var(--border-soft); border-radius:12px; }
+  .offer-sidebar h2 { margin:0 0 14px; color:var(--yellow); font:800 14px 'Sora',sans-serif; text-transform:uppercase; letter-spacing:.04em; }
+  .offer-sidebar label { display:block; margin:13px 0 6px; color:var(--text-muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+  .offer-sidebar .advanced-filter { width:100%; min-width:0; }
+  @media(max-width:780px){.offers-layout{grid-template-columns:1fr}.offer-sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}.offer-sidebar h2{grid-column:1/-1}.offer-sidebar label{margin-top:10px}}@media(max-width:460px){.offer-sidebar{grid-template-columns:1fr}}
 
   /* ---------- GRID ---------- */
   .grid {
@@ -227,21 +236,42 @@
     font-size: 12px;
     position: relative;
   }
+  .unavailable-overlay { position:absolute; inset:0; z-index:3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:18px; text-align:center; color:#fff; background:rgba(10,10,11,.76); backdrop-filter:grayscale(1) blur(1px); }
+  .unavailable-overlay .unavailable-x { display:grid; place-items:center; width:50px; height:50px; border:2px solid #ff5d59; border-radius:50%; color:#ff6964; font:400 42px/1 Arial,sans-serif; }
+  .unavailable-overlay strong { color:#ff807b; font:800 13px 'Sora',sans-serif; letter-spacing:.04em; }
+  .card.is-unavailable { border-color:rgba(255,93,89,.48); }
+  .card.is-unavailable .card-media img { filter:grayscale(1) brightness(.72); }
+  .card.is-unavailable .offer-badges, .card.is-unavailable .discount-flag { display:none; }
+  .card.is-unavailable .card-cta { background:#2a2a2a; color:#dedede; }
   .product-placeholder { font-size: 68px; line-height: 1; }
 
   .discount-flag {
-    position: absolute; top: 10px; left: 10px;
+    position: static;
+    display: inline-flex; align-items:center; justify-content:center;
+    min-height:30px;
     font-family: 'Sora', sans-serif;
     font-weight: 800;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1;
-    padding: 7px 10px;
-    border-radius: 6px;
-    color: var(--black-ink);
-    background: var(--yellow);
-    box-shadow: 0 2px 10px rgba(255,196,45,0.25);
-    animation: flag-pulse 2.6s ease-in-out infinite;
+    letter-spacing:.01em;
+    padding: 6px 9px;
+    border:1px solid rgba(108,255,170,.54);
+    border-radius:8px;
+    color:#06170d;
+    background:linear-gradient(135deg,#58e996,#20bd68);
+    box-shadow:0 4px 12px rgba(32,189,104,.22);
+    animation:none;
+    transform:translateY(-1px);
   }
+  .discount-flag::after { content:' OFF'; margin-left:4px; font:inherit; letter-spacing:.01em; opacity:.9; }
+  .favorite-button { position:absolute;right:10px;bottom:10px;z-index:2;display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(255,255,255,.34);border-radius:9px;background:rgba(14,14,15,.86);color:#fff;font-size:23px;line-height:1;cursor:pointer;transition:transform .18s ease,background .18s ease,color .18s ease,border-color .18s ease; }
+  .favorite-button:hover { transform:scale(1.08);border-color:var(--yellow);color:var(--yellow); }
+  .favorite-button.is-favorite { background:var(--yellow);border-color:var(--yellow);color:var(--black-ink); }
+  .favorite-button.is-favorite:active { transform:scale(.9); }
+  .offer-badges { position:absolute; left:10px; bottom:10px; z-index:2; display:flex; flex-direction:column; align-items:flex-start; gap:6px; max-width:calc(100% - 62px); pointer-events:none; }
+  .offer-badge { display:inline-flex; align-items:center; min-height:25px; padding:5px 8px; border-radius:6px; background:rgba(17,17,17,.9); border:1px solid rgba(255,255,255,.18); color:#f3f3f3; font:800 10px 'Sora',sans-serif; line-height:1.15; box-shadow:0 3px 12px rgba(0,0,0,.24); }
+  .offer-badge.best-price { border-color:rgba(52,199,120,.72); color:#a7efc5; }
+  .offer-badge.biggest-discount { border-color:rgba(255,196,45,.75); color:var(--yellow); }
 
   @keyframes flag-pulse {
     0%, 100% { box-shadow: 0 2px 10px rgba(255,196,45,0.25); }
@@ -275,6 +305,11 @@
     color: var(--text-primary);
     min-height: 55px;
   }
+  .card-rating { display:flex; align-items:center; gap:6px; min-height:18px; color:var(--text-muted); font-size:12px; line-height:1; }
+  .card-rating .rating-star { color:var(--yellow); font-size:16px; line-height:1; }
+  .card-rating strong { color:var(--text-primary); font-size:12px; }
+  .card-rating .rating-count { color:var(--text-muted); }
+  .card-rating.is-unavailable { color:#8d8d8d; font-size:11px; }
 
   .price-block {
     display: flex;
@@ -349,6 +384,15 @@
     gap: 6px;
   }
   .nav-btn:hover { filter: brightness(1.06); }
+  .top-nav [hidden], .side-panel [hidden] { display: none !important; }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .nav-account { background: transparent; border: 1px solid var(--yellow); color: var(--yellow); }
+  .profile-menu { position: relative; }
+  .profile-trigger { min-width: auto !important; background: transparent; border: 1px solid var(--yellow); color: var(--yellow); }
+  .nav-avatar { width: 28px; height: 28px; object-fit: cover; border-radius: 6px; }
+  .profile-dropdown { position: absolute; right: 0; top: calc(100% + 9px); z-index: 60; width: 180px; padding: 7px; border: 1px solid var(--border-soft); border-radius: 10px; background: var(--bg-panel); box-shadow: 0 16px 36px #0009; }
+  .profile-dropdown a, .profile-dropdown button { display: block; width: 100%; border: 0; border-radius: 6px; padding: 10px; background: transparent; color: var(--text-main); text-align: left; font: 700 13px 'Sora', sans-serif; cursor: pointer; }
+  .profile-dropdown a:hover, .profile-dropdown button:hover { background: #272727; color: var(--yellow); }
   .top-nav .nav-btn { min-width: 120px; justify-content: center; }
 
   .card-media img {
@@ -410,6 +454,45 @@
     border-bottom: 1px solid var(--border-soft);
   }
   .side-panel a:hover { color: var(--yellow); }
+  .category-group { border-bottom: 1px solid var(--border-soft); }
+  .category-toggle {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    justify-content: space-between;
+    padding: 10px 0;
+    text-align: left;
+    width: 100%;
+  }
+  .category-toggle::after { content: '+'; color: var(--yellow); font-size: 18px; font-weight: 400; }
+  .category-group.open .category-toggle::after { content: '−'; }
+  .category-toggle:hover { color: var(--yellow); }
+  .subcategory-list { display: none; padding: 0 0 7px; }
+  .category-group.open .subcategory-list { display: block; }
+  .side-panel .category-all { color: var(--yellow); font-size: 12px; padding: 5px 0 6px 12px; border-bottom: 0; }
+  .side-panel .subcategory-link {
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 5px 0 5px 12px;
+    border-bottom: 0;
+  }
+  .side-panel .subcategory-link::before { content: '↳ '; color: var(--yellow); }
+  .category-summary {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: -10px 0 18px;
+  }
+  .category-summary.visible { display: flex; }
+  .category-summary strong { font-size: 13px; color: var(--yellow); }
+  .category-summary button { padding: 5px 9px; font-size: 12px; }
 
   .section-title {
     font-family: 'Sora', sans-serif;
@@ -445,6 +528,14 @@
   <div class="top-nav">
     <button class="nav-btn" onclick="abrirPainelCategorias()">☰ Categorias</button>
     <a class="nav-btn nav-contact" href="contato.html">Contato</a>
+    <div class="nav-right">
+      <a class="nav-btn nav-account" id="accountMenuLink" href="login.html">Entrar</a>
+      <a class="nav-btn nav-account" id="adminMenuLink" href="admin.html" hidden>Painel admin</a>
+      <div class="profile-menu" id="profileMenu" hidden>
+        <button class="nav-btn profile-trigger" id="profileMenuButton" type="button" aria-haspopup="true" aria-expanded="false"><img class="nav-avatar" id="navAvatar" alt=""><span id="navUserName"></span>⌄</button>
+        <div class="profile-dropdown" id="profileDropdown" hidden><a href="conta.html">Minha conta</a><a href="favoritos.html">Meus favoritos</a><a href="alertas.html">Meus Alertas</a><button id="logoutMenuButton" type="button">Sair</button></div>
+      </div>
+    </div>
   </div>
 
   <div class="side-overlay" id="sideOverlay" onclick="fecharPainelCategorias()"></div>
@@ -454,14 +545,18 @@
 
     <h4>Categorias</h4>
     <a href="#ofertas" data-category="all">Todas as ofertas</a>
-    <a href="#ofertas" data-category="consoles">Consoles</a>
-    <a href="#ofertas" data-category="eletrodomesticos">Eletrodomésticos</a>
-    <a href="#ofertas" data-category="games">Games</a>
-    <a href="#ofertas" data-category="hardware">Hardware</a>
-    <a href="#ofertas" data-category="informatica">Informática</a>
-    <a href="#ofertas" data-category="perifericos">Periféricos</a>
-    <a href="#ofertas" data-category="smartphones">Smartphones</a>
-    <a href="#ofertas" data-category="tvs-audio">TVs e Áudio</a>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Games</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="games">Ver tudo em Games</a><a class="subcategory-link" href="#ofertas" data-subcategory="Console">Consoles</a><a class="subcategory-link" href="#ofertas" data-subcategory="Jogo">Jogos</a><a class="subcategory-link" href="#ofertas" data-subcategory="Controle">Controles</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Hardware</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="hardware">Ver tudo em Hardware</a><a class="subcategory-link" href="#ofertas" data-subcategory="SSD">SSD e armazenamento</a><a class="subcategory-link" href="#ofertas" data-subcategory="Placa de vídeo">Placas de vídeo</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Informática</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="informatica">Ver tudo em Informática</a><a class="subcategory-link" href="#ofertas" data-subcategory="Notebook">Notebooks</a><a class="subcategory-link" href="#ofertas" data-subcategory="Impressora">Impressoras</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Periféricos</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="perifericos">Ver tudo em Periféricos</a><a class="subcategory-link" href="#ofertas" data-subcategory="Headset">Headsets</a><a class="subcategory-link" href="#ofertas" data-subcategory="Microfone">Microfones</a><a class="subcategory-link" href="#ofertas" data-subcategory="Teclado">Teclados</a><a class="subcategory-link" href="#ofertas" data-subcategory="Mouse">Mouses</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Celulares e Tablets</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="smartphones">Ver tudo em Celulares e Tablets</a><a class="subcategory-link" href="#ofertas" data-subcategory="Smartphone">Celulares</a><a class="subcategory-link" href="#ofertas" data-subcategory="Tablet">Tablets</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">TVs e Áudio</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="tvs-audio">Ver tudo em TVs e Áudio</a><a class="subcategory-link" href="#ofertas" data-subcategory="TV">TVs</a><a class="subcategory-link" href="#ofertas" data-subcategory="Fone de ouvido">Fones de ouvido</a></div></div>
+    <a href="#ofertas" data-category="casa-cozinha">Casa e Cozinha</a>
+    <a href="#ofertas" data-category="bebes">Bebês e Crianças</a>
+    <a href="#ofertas" data-category="saude-beleza">Saúde e Beleza</a>
+    <a href="#ofertas" data-category="ferramentas-auto">Ferramentas e Auto</a>
+    <a href="#ofertas" data-category="moda-acessorios">Moda e Acessórios</a>
+    <a href="#ofertas" data-category="outros">Outros</a>
 
     <h4>Lojas</h4>
     <a href="#">Shopee</a>
@@ -472,6 +567,8 @@
     <h4>Links</h4>
     <a href="#">Entrar no Telegram</a>
     <a href="#">Entrar no WhatsApp</a>
+    <a href="login.html" id="accountDrawerLink">Entrar</a>
+    <a href="admin.html" id="adminDrawerLink" hidden>Painel administrativo</a>
     <a href="contato.html">Contato</a>
     <a href="https://www.youtube.com/@reiwo" target="_blank" rel="noopener">YouTube ReiWO</a>
     <a href="https://www.instagram.com/reiwooficial/" target="_blank" rel="noopener">Instagram ReiWO</a>
@@ -501,13 +598,13 @@
       <span class="label" style="margin-left:14px;">Ordenar</span>
       <button class="chip" type="button" data-sort="asc" aria-pressed="false">Menor valor</button>
       <button class="chip" type="button" data-sort="desc" aria-pressed="false">Maior valor</button>
-      <label class="label" for="searchOffers" style="margin-left:14px;">Pesquisar</label>
       <input class="search-offers" id="searchOffers" type="search" placeholder="Buscar produto..." autocomplete="off">
     </div>
-
+    <div class="category-summary" id="categorySummary" aria-live="polite"></div>
+    <div class="offers-layout"><aside class="offer-sidebar"><h2>Filtrar ofertas</h2><label for="filterMarketplace">Loja</label><select class="advanced-filter" id="filterMarketplace"><option value="all">Todas as lojas</option><option value="mercado_livre">Mercado Livre</option><option value="shopee">Shopee</option></select><label for="filterCategory">Categoria</label><select class="advanced-filter" id="filterCategory"><option value="all">Todas as categorias</option><option value="perifericos">Periféricos</option><option value="hardware">Hardware</option><option value="informatica">Informática</option><option value="smartphones">Celulares e Tablets</option><option value="tvs-audio">TVs e Áudio</option><option value="games">Games</option><option value="casa-cozinha">Casa e Cozinha</option><option value="bebes">Bebês e Crianças</option><option value="saude-beleza">Saúde e Beleza</option><option value="ferramentas-auto">Ferramentas e Auto</option><option value="moda-acessorios">Moda e Acessórios</option><option value="outros">Outros</option></select><label for="filterSubcategory">Tipo</label><select class="advanced-filter" id="filterSubcategory"><option value="">Todos os tipos</option></select><label for="filterMinPrice">Preço mínimo</label><input class="advanced-filter" id="filterMinPrice" inputmode="decimal" placeholder="Ex.: 50,00"><label for="filterMaxPrice">Preço máximo</label><input class="advanced-filter" id="filterMaxPrice" inputmode="decimal" placeholder="Ex.: 300,00"><label for="filterRating">Avaliação</label><select class="advanced-filter" id="filterRating"><option value="0">Qualquer nota</option><option value="4">Nota 4 ou mais</option><option value="4.5">Nota 4,5 ou mais</option></select></aside>
     <div class="grid" id="ofertas">
 
-      <div class="card is-link" style="--i:0;" data-category="perifericos" data-product-url="produto.html" role="link" tabindex="0" aria-label="Abrir página do Headset sem fio Redragon H510-PRO">
+      <div class="card is-link" style="--i:0;" data-category="perifericos" data-subcategory="Headset" data-rating="4.9" data-review-count="10387" data-product-url="produto.html" role="link" tabindex="0" aria-label="Abrir página do Headset sem fio Redragon H510-PRO">
         <div class="card-media"><img src="redragon-h510-pro.png" alt="Headset sem fio Redragon H510-PRO preto"><span class="discount-flag">-31%</span><span class="store-badge">Mercado Livre</span></div>
         <div class="card-body">
           <div class="card-title">Headset sem fio Redragon H510-PRO preto com luz LED</div>
@@ -519,7 +616,7 @@
         </div>
       </div>
 
-      <div class="card is-link" style="--i:1;" data-category="eletrodomesticos" data-product-url="produto-lencos.html" role="link" tabindex="0" aria-label="Abrir página do Kit com 3 lenços umedecidos Personalidade Baby">
+      <div class="card is-link" style="--i:1;" data-category="bebes" data-subcategory="Higiene" data-rating="4.8" data-review-count="8" data-product-url="produto-lencos.html" role="link" tabindex="0" aria-label="Abrir página do Kit com 3 lenços umedecidos Personalidade Baby">
         <div class="card-media"><img src="lencos-personalidade-baby.png" alt="Kit com 3 pacotes de lenços umedecidos Personalidade Baby"><span class="discount-flag">-12%</span><span class="store-badge">Mercado Livre</span></div>
         <div class="card-body">
           <div class="card-title">Kit com 3 Lenços Umedecidos Personalidade Baby, 100 unidades cada</div>
@@ -528,7 +625,7 @@
         </div>
       </div>
 
-      <div class="card is-link" style="--i:2;" data-category="perifericos" data-product-url="produto-microfone.html" role="link" tabindex="0" aria-label="Abrir página do Microfone Gamer Profissional RGB">
+      <div class="card is-link" style="--i:2;" data-category="perifericos" data-subcategory="Microfone" data-rating="4.7" data-review-count="98" data-product-url="produto-microfone.html" role="link" tabindex="0" aria-label="Abrir página do Microfone Gamer Profissional RGB">
         <div class="card-media"><img src="microfone-gamer-rgb.png" alt="Microfone gamer condensador com LED RGB"><span class="discount-flag">-50%</span><span class="store-badge">Mercado Livre</span></div>
         <div class="card-body">
           <div class="card-title">Microfone Gamer Profissional Condensador para PC com LED RGB</div>
@@ -537,7 +634,7 @@
         </div>
       </div>
 
-      <div class="card" style="--i:3;" data-category="perifericos">
+      <div class="card" style="--i:3;" data-category="perifericos" data-subcategory="Headset">
         <div class="card-media">imagem do produto<span class="discount-flag">-35%</span><span class="store-badge">Mercado Livre</span></div>
         <div class="card-body">
           <div class="card-title">Headset Gamer 7.1 USB com Microfone</div>
@@ -549,7 +646,7 @@
         </div>
       </div>
 
-      <div class="card" style="--i:4;" data-category="perifericos">
+      <div class="card" style="--i:4;" data-category="perifericos" data-subcategory="Teclado">
         <div class="card-media">imagem do produto<span class="discount-flag">-49%</span><span class="store-badge">Shopee</span></div>
         <div class="card-body">
           <div class="card-title">Teclado Mecânico RGB Switch Red ABNT2</div>
@@ -561,7 +658,7 @@
         </div>
       </div>
 
-      <div class="card" style="--i:5;" data-category="hardware">
+      <div class="card" style="--i:5;" data-category="hardware" data-subcategory="SSD">
         <div class="card-media">imagem do produto<span class="discount-flag">-63%</span><span class="store-badge">Mercado Livre</span></div>
         <div class="card-body">
           <div class="card-title">SSD NVMe 1TB Leitura 5000MB/s</div>
@@ -573,7 +670,7 @@
         </div>
       </div>
 
-      <div class="card" style="--i:6;" data-category="perifericos">
+      <div class="card" style="--i:6;" data-category="perifericos" data-subcategory="Acessório">
         <div class="card-media">imagem do produto<span class="discount-flag">-22%</span><span class="store-badge">Shopee</span></div>
         <div class="card-body">
           <div class="card-title">Suporte de Mesa para Headset</div>
@@ -585,7 +682,7 @@
         </div>
       </div>
 
-      <div class="card" style="--i:7;" data-category="games">
+      <div class="card" style="--i:7;" data-category="games" data-subcategory="Cadeira gamer">
         <div class="card-media">imagem do produto<span class="discount-flag">-36%</span><span class="store-badge">Mercado Livre</span></div>
         <div class="card-body">
           <div class="card-title">Cadeira Gamer Reclinável até 130kg</div>
@@ -597,7 +694,7 @@
         </div>
       </div>
 
-    </div>
+    </div></div>
 
     <div class="empty">Nenhuma oferta publicada ainda. Volte em breve — conferimos novas promoções todos os dias.</div>
   </div>
@@ -614,6 +711,19 @@
   </footer>
 
   <script>
+    // Mantém várias cópias do mesmo conteúdo em movimento. A metade final é
+    // idêntica à primeira, permitindo reiniciar a animação sem faixa vazia.
+    function prepararTickerContinuo() {
+      const tickerTrack = document.querySelector('.ticker-track');
+      if (!tickerTrack) return;
+      const original = tickerTrack.dataset.content || tickerTrack.innerHTML;
+      tickerTrack.dataset.content = original;
+      while (tickerTrack.scrollWidth < window.innerWidth * 4) tickerTrack.insertAdjacentHTML('beforeend', original);
+    }
+    prepararTickerContinuo();
+    if (document.fonts?.ready) document.fonts.ready.then(prepararTickerContinuo);
+    else window.addEventListener('load', prepararTickerContinuo, { once: true });
+
     function abrirPainelCategorias() {
       document.getElementById('sidePanel').classList.add('open');
       document.getElementById('sideOverlay').classList.add('open');
@@ -628,12 +738,139 @@
       if (e.key === 'Escape') fecharPainelCategorias();
     });
 
+    async function atualizarMenuDaConta() {
+      try {
+        const resposta = await fetch('/api/auth/session', { cache: 'no-store' });
+        if (!resposta.ok) return;
+        const sessao = await resposta.json();
+        document.getElementById('accountMenuLink').hidden = true;
+        document.getElementById('profileMenu').hidden = false;
+        document.getElementById('navAvatar').src = sessao.avatarUrl || `assets/avatars/${sessao.avatarId || 'avatar-1'}.png`;
+        document.getElementById('navUserName').textContent = sessao.displayName || sessao.name || sessao.email.split('@')[0];
+        document.getElementById('accountDrawerLink').href = 'conta.html';
+        document.getElementById('accountDrawerLink').textContent = 'Minha conta';
+        const profileMenuButton = document.getElementById('profileMenuButton');
+        const profileDropdown = document.getElementById('profileDropdown');
+        profileMenuButton.addEventListener('click', () => {
+          const open = profileDropdown.hidden;
+          profileDropdown.hidden = !open;
+          profileMenuButton.setAttribute('aria-expanded', String(open));
+        });
+        document.addEventListener('click', (event) => {
+          if (!document.getElementById('profileMenu').contains(event.target)) { profileDropdown.hidden = true; profileMenuButton.setAttribute('aria-expanded', 'false'); }
+        });
+        document.getElementById('logoutMenuButton').addEventListener('click', async () => {
+          await fetch('/api/auth/logout', { method: 'POST' });
+          window.location.reload();
+        });
+        if (sessao.isAdmin) {
+          document.getElementById('adminMenuLink').hidden = false;
+          document.getElementById('adminDrawerLink').hidden = false;
+        }
+      } catch { /* visitante sem sessão: mantém o link Entrar */ }
+    }
+    atualizarMenuDaConta();
+
     const gradeOfertas = document.querySelector('.grid');
     let cardsOfertas = Array.from(gradeOfertas.querySelectorAll('.card'));
     const avisoVazio = document.querySelector('.empty');
     let filtroDesconto = 'all';
     let filtroCategoria = 'all';
+    let filtroSubcategoria = '';
     let termoPesquisa = '';
+    let filtroLoja = 'all';
+    let precoMinimo = null;
+    let precoMaximo = null;
+    let notaMinima = 0;
+    const resumoCategoria = document.getElementById('categorySummary');
+    const subcategoriasPorCategoria = {
+      perifericos: ['Headset', 'Microfone', 'Teclado', 'Mouse', 'Monitor', 'Webcam', 'Acessório'], hardware: ['SSD', 'Memória RAM', 'Placa de vídeo', 'Processador', 'Placa-mãe', 'Fonte'],
+      informatica: ['Notebook', 'Impressora', 'Câmera'], smartphones: ['Smartphone', 'Tablet', 'Smartwatch'], 'tvs-audio': ['TV', 'Caixa de som', 'Fone de ouvido', 'Soundbar'],
+      games: ['Console', 'Jogo', 'Controle', 'Cadeira gamer'], bebes: ['Higiene', 'Fraldas', 'Alimentação', 'Brinquedo infantil'],
+    };
+
+    function adicionarAvaliacaoAoCard(card, rating = card.dataset.rating, reviewCount = card.dataset.reviewCount) {
+      card.querySelector('.card-rating')?.remove();
+      const titulo = card.querySelector('.card-title');
+      if (!titulo) return;
+      const avaliacao = document.createElement('div');
+      avaliacao.className = 'card-rating';
+      const nota = Number(String(rating || '').replace(',', '.'));
+      if (Number.isFinite(nota) && nota > 0) {
+        const estrela = document.createElement('span'); estrela.className = 'rating-star'; estrela.textContent = '★'; estrela.setAttribute('aria-hidden', 'true');
+        const valor = document.createElement('strong'); valor.textContent = nota.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        avaliacao.append(estrela, valor);
+        if (reviewCount) { const quantidade = document.createElement('span'); quantidade.className = 'rating-count'; quantidade.textContent = `(${reviewCount} avaliações)`; avaliacao.append(quantidade); }
+        avaliacao.setAttribute('aria-label', `Avaliação ${valor.textContent} de 5${reviewCount ? `, ${reviewCount} avaliações` : ''}`);
+      } else {
+        avaliacao.classList.add('is-unavailable');
+        avaliacao.textContent = 'Avaliação não informada';
+      }
+      titulo.after(avaliacao);
+    }
+    function moverDescontoParaPreco(card) {
+      const desconto = card.querySelector('.card-media .discount-flag');
+      const linhaPreco = card.querySelector('.price-new-row');
+      if (desconto && linhaPreco) linhaPreco.append(desconto);
+    }
+    cardsOfertas.forEach((card) => { adicionarAvaliacaoAoCard(card); moverDescontoParaPreco(card); });
+
+    function ehMelhorPrecoRegistrado(oferta) {
+      const historico = Array.isArray(oferta.priceHistory) ? oferta.priceHistory : [];
+      const precos = historico.map((item) => Number(item.price)).filter((preco) => Number.isFinite(preco) && preco > 0);
+      const atual = Number(oferta.currentPrice);
+      return precos.length > 1 && Number.isFinite(atual) && Math.abs(atual - Math.min(...precos)) < 0.001 && precos.some((preco) => preco > atual + 0.001);
+    }
+
+    function adicionarSelosAoCard(card, oferta, maiorDesconto) {
+      card.querySelector('.offer-badges')?.remove();
+      const midia = card.querySelector('.card-media');
+      if (!midia) return;
+      const selos = [];
+      if (ehMelhorPrecoRegistrado(oferta)) selos.push(['best-price', '✓ Melhor preço registrado']);
+      if (Number(oferta.discountPct) > 0 && Number(oferta.discountPct) === maiorDesconto) selos.push(['biggest-discount', '⚡ Maior desconto']);
+      if (!selos.length) return;
+      const area = document.createElement('div'); area.className = 'offer-badges';
+      selos.forEach(([tipo, texto]) => { const selo = document.createElement('span'); selo.className = `offer-badge ${tipo}`; selo.textContent = texto; area.append(selo); });
+      midia.append(area);
+    }
+
+    function indicarOfertaIndisponivel(card, oferta) {
+      card.classList.toggle('is-unavailable', oferta.available === false);
+      card.querySelector('.unavailable-overlay')?.remove();
+      if (oferta.available !== false) return;
+      const midia = card.querySelector('.card-media');
+      if (!midia) return;
+      const aviso = document.createElement('div'); aviso.className = 'unavailable-overlay'; aviso.setAttribute('aria-label', 'Oferta não disponível');
+      aviso.innerHTML = '<span class="unavailable-x" aria-hidden="true">×</span><strong>OFERTA NÃO DISPONÍVEL</strong>';
+      midia.append(aviso);
+      const botao = card.querySelector('.card-cta');
+      if (botao) botao.textContent = 'Ver detalhes';
+    }
+
+    function preencherTipos() {
+      const seletor = document.getElementById('filterSubcategory'); const atual = filtroSubcategoria;
+      const tipos = filtroCategoria === 'all' ? [] : (subcategoriasPorCategoria[filtroCategoria] || []);
+      seletor.replaceChildren(new Option('Todos os tipos', ''), ...tipos.map((tipo) => new Option(tipo, tipo)));
+      seletor.value = tipos.includes(atual) ? atual : '';
+      filtroSubcategoria = seletor.value;
+    }
+
+    function atualizarResumoCategoria() {
+      const partes = [];
+      if (filtroCategoria !== 'all') {
+        const link = document.querySelector(`.side-panel [data-category="${filtroCategoria}"]`);
+        if (link) partes.push(link.textContent.trim());
+      }
+      if (filtroSubcategoria) partes.push(filtroSubcategoria);
+      resumoCategoria.classList.toggle('visible', partes.length > 0);
+      resumoCategoria.replaceChildren();
+      if (!partes.length) return;
+      const texto = document.createElement('strong'); texto.textContent = `Categoria: ${partes.join(' / ')}`;
+      const limpar = document.createElement('button'); limpar.type = 'button'; limpar.className = 'chip'; limpar.textContent = 'Limpar categoria';
+      limpar.addEventListener('click', () => { filtroCategoria = 'all'; filtroSubcategoria = ''; atualizarResumoCategoria(); atualizarOfertas(); });
+      resumoCategoria.append(texto, limpar);
+    }
 
     function descontoDoCard(card) {
       const selo = card.querySelector('.discount-flag');
@@ -645,6 +882,9 @@
         .replace('R$', '').replace('.', '').replace(',', '.').trim());
     }
 
+    function notaDoCard(card) { return Number(String(card.dataset.rating || '0').replace(',', '.')) || 0; }
+    function lojaDoCard(card) { return card.dataset.marketplace || (card.querySelector('.store-badge')?.textContent.trim() === 'Shopee' ? 'shopee' : 'mercado_livre'); }
+
     function atualizarOfertas() {
       let visiveis = 0;
       cardsOfertas.forEach((card) => {
@@ -653,11 +893,15 @@
           || (filtroDesconto === 'up-to-30' && desconto <= 30)
           || (filtroDesconto === '30-to-50' && desconto > 30 && desconto <= 50)
           || (filtroDesconto === 'above-50' && desconto > 50);
-        const correspondeACategoria = filtroCategoria === 'all'
-          || card.dataset.category === filtroCategoria;
-        const correspondeAPesquisa = card.textContent.toLocaleLowerCase('pt-BR')
-          .includes(termoPesquisa);
-        const deveMostrar = correspondeAoDesconto && correspondeACategoria && correspondeAPesquisa;
+        const correspondeACategoria = (filtroCategoria === 'all' || card.dataset.category === filtroCategoria)
+          && (!filtroSubcategoria || card.dataset.subcategory === filtroSubcategoria);
+        const textoPesquisavel = `${card.textContent} ${card.dataset.category || ''} ${card.dataset.subcategory || ''}`.toLocaleLowerCase('pt-BR');
+        const correspondeAPesquisa = textoPesquisavel.includes(termoPesquisa);
+        const preco = precoDoCard(card);
+        const correspondeALoja = filtroLoja === 'all' || lojaDoCard(card) === filtroLoja;
+        const correspondeAoPreco = (precoMinimo === null || preco >= precoMinimo) && (precoMaximo === null || preco <= precoMaximo);
+        const correspondeANota = notaMinima === 0 || notaDoCard(card) >= notaMinima;
+        const deveMostrar = correspondeAoDesconto && correspondeACategoria && correspondeAPesquisa && correspondeALoja && correspondeAoPreco && correspondeANota;
         card.hidden = !deveMostrar;
         if (deveMostrar) visiveis += 1;
       });
@@ -689,10 +933,36 @@
       });
     });
 
+    document.querySelectorAll('.category-toggle').forEach((button) => {
+      button.addEventListener('click', () => {
+        const group = button.closest('.category-group');
+        const isOpen = group.classList.toggle('open');
+        button.setAttribute('aria-expanded', isOpen);
+      });
+    });
+
     document.querySelectorAll('.side-panel [data-category]').forEach((link) => {
       link.addEventListener('click', (event) => {
         event.preventDefault();
         filtroCategoria = link.dataset.category;
+        filtroSubcategoria = '';
+        document.getElementById('filterCategory').value = filtroCategoria;
+        preencherTipos();
+        atualizarResumoCategoria();
+        atualizarOfertas();
+        fecharPainelCategorias();
+        document.getElementById('ofertas').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    document.querySelectorAll('.side-panel [data-subcategory]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        filtroCategoria = 'all';
+        filtroSubcategoria = link.dataset.subcategory;
+        document.getElementById('filterCategory').value = 'all';
+        preencherTipos();
+        atualizarResumoCategoria();
         atualizarOfertas();
         fecharPainelCategorias();
         document.getElementById('ofertas').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -703,6 +973,21 @@
       termoPesquisa = event.target.value.trim().toLocaleLowerCase('pt-BR');
       atualizarOfertas();
     });
+
+    function numeroDoFiltro(value) {
+      const texto = String(value || '').trim();
+      if (!texto) return null;
+      const normalizado = texto.replace(/[^0-9,.-]/g, '').replace(/\./g, '').replace(',', '.');
+      if (!/[0-9]/.test(normalizado)) return null;
+      const number = Number(normalizado);
+      return Number.isFinite(number) && number >= 0 ? number : null;
+    }
+    document.getElementById('filterMarketplace').addEventListener('change', (event) => { filtroLoja = event.target.value; atualizarOfertas(); });
+    document.getElementById('filterCategory').addEventListener('change', (event) => { filtroCategoria = event.target.value; filtroSubcategoria = ''; preencherTipos(); atualizarResumoCategoria(); atualizarOfertas(); });
+    document.getElementById('filterSubcategory').addEventListener('change', (event) => { filtroSubcategoria = event.target.value; atualizarResumoCategoria(); atualizarOfertas(); });
+    document.getElementById('filterMinPrice').addEventListener('input', (event) => { precoMinimo = numeroDoFiltro(event.target.value); atualizarOfertas(); });
+    document.getElementById('filterMaxPrice').addEventListener('input', (event) => { precoMaximo = numeroDoFiltro(event.target.value); atualizarOfertas(); });
+    document.getElementById('filterRating').addEventListener('change', (event) => { notaMinima = Number(event.target.value) || 0; atualizarOfertas(); });
 
     function registrarCardClicavel(card) {
       card.addEventListener('click', (event) => {
@@ -727,11 +1012,59 @@
       '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
     })[caractere]);
 
+    let favoriteIds = new Set();
+    let favoritesEnabled = false;
+
+    function atualizarBotaoFavorito(button, active) {
+      button.classList.toggle('is-favorite', active);
+      button.textContent = active ? '★' : '☆';
+      button.setAttribute('aria-label', active ? 'Remover dos favoritos' : 'Adicionar aos favoritos');
+      button.title = active ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
+    }
+
+    async function carregarFavoritos() {
+      try {
+        const response = await fetch('/api/favorites', { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await response.json();
+        favoriteIds = new Set(data.ids || []);
+        favoritesEnabled = true;
+      } catch { /* visitante continua vendo a estrela vazia */ }
+    }
+
+    function criarBotaoFavorito(offerId) {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'favorite-button';
+      atualizarBotaoFavorito(button, favoriteIds.has(offerId));
+      button.addEventListener('click', async (event) => {
+        event.preventDefault(); event.stopPropagation();
+        if (!favoritesEnabled) { window.location.href = 'login.html'; return; }
+        const isFavorite = favoriteIds.has(offerId);
+        button.disabled = true;
+        try {
+          const response = await fetch(`/api/favorites/${encodeURIComponent(offerId)}`, { method: isFavorite ? 'DELETE' : 'POST' });
+          if (!response.ok) throw new Error();
+          if (isFavorite) favoriteIds.delete(offerId); else favoriteIds.add(offerId);
+          atualizarBotaoFavorito(button, !isFavorite);
+        } catch { alert('Não foi possível atualizar seus favoritos agora.'); }
+        finally { button.disabled = false; }
+      });
+      return button;
+    }
+
+    function inferirSubcategoria(oferta) {
+      if (oferta.subcategory) return oferta.subcategory;
+      const title = String(oferta.title || '').toLocaleLowerCase('pt-BR');
+      const rules = [['headset', 'Headset'], ['microfone', 'Microfone'], ['teclado', 'Teclado'], ['mouse', 'Mouse'], ['ssd', 'SSD'], ['notebook', 'Notebook'], ['impressora', 'Impressora'], ['smartphone', 'Smartphone'], ['celular', 'Smartphone'], ['tablet', 'Tablet'], ['console', 'Console'], ['cadeira gamer', 'Cadeira gamer'], ['lenço', 'Higiene'], ['fralda', 'Fraldas']];
+      return rules.find(([term]) => title.includes(term))?.[1] || '';
+    }
+
     async function carregarCardsCadastrados() {
       try {
         const resposta = await fetch('/api/ofertas', { cache: 'no-store' });
         if (!resposta.ok) return;
         const ofertas = await resposta.json();
+        const maiorDesconto = Math.max(0, ...ofertas.map((oferta) => Number(oferta.discountPct) || 0));
         gradeOfertas.innerHTML = '';
         cardsOfertas = [];
         ofertas.forEach((oferta, indice) => {
@@ -739,6 +1072,11 @@
           card.className = 'card is-link';
           card.style.setProperty('--i', indice);
           card.dataset.category = oferta.category || 'outros';
+          card.dataset.subcategory = inferirSubcategoria(oferta);
+          card.dataset.marketplace = oferta.marketplace || 'mercado_livre';
+          card.dataset.rating = oferta.rating || '0';
+          card.dataset.reviewCount = oferta.reviewCount || '';
+          card.dataset.available = String(oferta.available !== false);
           card.dataset.productUrl = `produto-dinamico.html?id=${encodeURIComponent(oferta.id)}`;
           card.setAttribute('role', 'link');
           card.tabIndex = 0;
@@ -748,6 +1086,11 @@
           const loja = oferta.marketplace === 'shopee' ? 'Shopee' : 'Mercado Livre';
           const paginaProduto = escaparHtml(card.dataset.productUrl);
           card.innerHTML = `<div class="card-media">${oferta.image ? `<img src="${escaparHtml(oferta.image)}" alt="${escaparHtml(oferta.title)}">` : 'Imagem não disponível'}${desconto}<span class="store-badge">${loja}</span></div><div class="card-body"><div class="card-title">${escaparHtml(oferta.title)}</div><div class="price-block">${precoAnterior}<div class="price-new-row"><span class="price-new-label">Por</span><span class="price-new">${formatarPreco(oferta.currentPrice)}</span></div></div><a class="card-cta" href="${paginaProduto}">Ver oferta</a></div>`;
+          adicionarAvaliacaoAoCard(card, oferta.rating, oferta.reviewCount);
+          moverDescontoParaPreco(card);
+          adicionarSelosAoCard(card, oferta, maiorDesconto);
+          indicarOfertaIndisponivel(card, oferta);
+          card.querySelector('.card-media').append(criarBotaoFavorito(oferta.id));
           gradeOfertas.append(card);
           registrarCardClicavel(card);
         });
@@ -758,7 +1101,15 @@
       }
     }
 
-    carregarCardsCadastrados();
+    const initialParams = new URLSearchParams(window.location.search);
+    const initialCategory = initialParams.get('categoria');
+    const initialSubcategory = initialParams.get('subcategoria');
+    if (initialCategory && document.querySelector(`.side-panel [data-category="${initialCategory}"]`)) {
+      filtroCategoria = initialCategory;
+      filtroSubcategoria = initialSubcategory || '';
+      atualizarResumoCategoria();
+    }
+    carregarFavoritos().finally(carregarCardsCadastrados);
   </script>
 
 </body>

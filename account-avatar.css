@@ -1,0 +1,4 @@
+/* Área fixa do avatar: a imagem ocupa o espaço sem deformar. */
+.avatar-wrap { overflow: hidden; border: 2px solid #ffc42d; border-radius: 14px; background: #111; }
+.avatar-main { width: 100% !important; height: 100% !important; border: 0 !important; border-radius: inherit !important; object-fit: cover; object-position: center; }
+.photo-button { right: 5px !important; bottom: 5px !important; width: 36px !important; height: 36px !important; }

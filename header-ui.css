@@ -1,0 +1,47 @@
+/* Padrão visual dos controles de navegação do Economizaí. */
+.top-nav > .nav-btn,
+.top-nav > .nav-contact,
+.common-nav > .nav-back,
+.common-nav > .nav-btn,
+.common-nav > .nav-link:not(.account-login):not(.admin-link) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 132px;
+  min-width: 132px;
+  height: 40px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+/* Os comandos à direita seguem a mesma altura, mas preservam a largura do texto. */
+.top-nav .nav-account,
+.common-nav .account-login,
+.common-nav .admin-link,
+.top-nav .profile-trigger,
+.common-nav .common-profile-trigger {
+  min-height: 40px;
+}
+
+/* Mesmo comportamento de categorias usado na página de ofertas. */
+.category-drawer .category-primary,
+.category-drawer .category-toggle { display: block; width: 100%; padding: 9px 0; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); text-align: left; font: 700 14px Inter,Arial,sans-serif; cursor: pointer; }
+.category-drawer .category-toggle { position: relative; }
+.category-drawer .category-toggle::after { content: '+'; position: absolute; right: 2px; color: var(--yellow); font-size: 18px; font-weight: 400; }
+.category-drawer .category-group.open .category-toggle::after { content: '−'; }
+.category-drawer .category-primary:hover, .category-drawer .category-toggle:hover { color: var(--yellow); }
+.category-drawer .subcategory-list { display: none; padding: 0 0 7px; }
+.category-drawer .category-group.open .subcategory-list { display: block; }
+.category-drawer .subcategory-list a { padding: 5px 0 5px 13px; border-bottom: 0; }
+.category-drawer .subcategory-link::before { content: '↳ '; color: var(--yellow); }
+.category-drawer > .category-all { color: var(--yellow); font-size: 13px; }
+
+@media (max-width: 700px) {
+  .top-nav > .nav-btn,
+  .top-nav > .nav-contact,
+  .common-nav > .nav-btn {
+    width: auto;
+    min-width: 0;
+    padding-inline: 14px;
+  }
+}
