@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Usuários e permissões | Economizaí</title>
+  <link rel="stylesheet" href="institutional.css"><link rel="stylesheet" href="admin-ui.css"><link rel="stylesheet" href="admin-users.css">
+</head>
+<body>
+  <main class="admin-page users-page">
+    <header class="admin-topbar">
+      <div><p class="admin-kicker">Economizaí · acesso interno</p><h1>Usuários e permissões</h1><p class="lead">Defina quem pode acessar as ferramentas administrativas do Economizaí.</p></div>
+      <a class="back" href="analytics.html">← Voltar ao painel</a>
+    </header>
+    <nav class="admin-nav" aria-label="Atalhos do painel"><a href="admin.html?cadastro=1#cadastro"><b>＋</b> Nova oferta</a><a href="admin-cards.html"><b>▦</b> Cards cadastrados</a><a href="analytics.html"><b>▥</b> Análises</a><a href="reportes.html"><b>✦</b> Atendimento</a><a href="#usuarios"><b>♙</b> Usuários</a><a href="index.html"><b>↗</b> Ver site</a></nav>
+    <section class="users-intro"><div><strong>Controle de acesso e segurança</strong><p>Além das permissões, você pode suspender por prazo definido, banir, reativar ou excluir contas. Suspensões e banimentos bloqueiam o login e os recursos protegidos imediatamente.</p></div><span>Ações críticas exigem confirmação</span></section>
+    <section class="users-panel" id="usuarios">
+      <div class="admin-list-toolbar"><strong id="usersCounter">Carregando usuários…</strong><input id="search" type="search" placeholder="Buscar por nome ou e-mail"></div>
+      <p class="users-status" id="status" aria-live="polite">Carregando usuários…</p>
+      <div class="users-list" id="users"></div>
+    </section>
+  </main>
+  <script src="admin-users.js"></script>
+</body>
+</html>

@@ -1,4 +1,16 @@
 /* Padrão visual dos controles de navegação do Economizaí. */
+/* Barras de rolagem compartilhadas: discretas, mas fáceis de localizar. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #d9a91b #111214;
+}
+
+*::-webkit-scrollbar { width: 11px; height: 11px; }
+*::-webkit-scrollbar-track { background: #111214; border-left: 1px solid #272727; }
+*::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #ffd257, #d99f12); border: 3px solid #111214; border-radius: 999px; }
+*::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #ffe083, #ffc42d); }
+*::-webkit-scrollbar-corner { background: #111214; }
+
 .top-nav > .nav-btn,
 .top-nav > .nav-contact,
 .common-nav > .nav-back,
@@ -37,11 +49,64 @@
 .category-drawer > .category-all { color: var(--yellow); font-size: 13px; }
 
 @media (max-width: 700px) {
+  /* Em telas estreitas, a navegação pode ocupar duas linhas sem criar
+     rolagem horizontal. Isso mantém todos os atalhos importantes acessíveis. */
+  .top-nav.common-nav {
+    flex-wrap: wrap;
+    padding-inline: 14px;
+  }
+
   .top-nav > .nav-btn,
   .top-nav > .nav-contact,
-  .common-nav > .nav-btn {
+  .common-nav > .nav-back,
+  .common-nav > .nav-btn,
+  .common-nav > .nav-link:not(.account-login):not(.admin-link) {
     width: auto;
     min-width: 0;
     padding-inline: 14px;
   }
+
+  .common-nav .nav-back {
+    display: inline-flex;
+  }
+
+  .common-nav-right {
+    min-width: max-content;
+  }
+
+  .common-nav .common-profile-trigger {
+    max-width: min(220px, calc(100vw - 42px));
+  }
+
+  .common-nav .common-profile-trigger span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
+
+/* Marca e contato no rodapé: o acesso a contato fica junto da identidade do site. */
+.site-footer .footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-footer .footer-logo { display: inline-flex; align-items: center; width: min(190px, 100%); }
+.site-footer .footer-logo img { display: block; width: min(190px, 100%); height: auto; max-height: 96px; object-fit: contain; object-position: center; }
+.site-footer .footer-brand small { display: block; width: min(190px, 100%); margin: 0; text-align: center; }
+.site-footer .footer-contact-label { color: var(--muted); font-size: 12px; text-align: center; }
+.site-footer .footer-contact {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 112px;
+  padding: 8px 13px !important;
+  border: 1px solid var(--yellow);
+  border-radius: 7px;
+  background: var(--yellow);
+  color: var(--ink) !important;
+  font: 800 13px Sora,Arial,sans-serif;
+}
+.site-footer .footer-contact:hover { background: transparent; color: var(--yellow) !important; }

@@ -6,20 +6,24 @@
   <title>Entrar no painel | Economizaí</title>
   <link rel="stylesheet" href="institutional.css">
   <style>
-    body{min-height:100vh;margin:0;display:grid;place-items:center;background:#0b0b0c;color:#f5f5f5;font:16px Inter,system-ui,sans-serif}.login{width:min(100% - 40px,420px);box-sizing:border-box;padding:34px;background:#171717;border:1px solid #303030;border-radius:16px;box-shadow:0 24px 70px #0008}.brand{margin:0;color:#ffc42d;font:800 30px Sora,system-ui}.tagline{margin:3px 0 27px;color:#aaa}.tabs{display:flex;gap:8px;margin-bottom:18px}.tab{flex:1;border:1px solid #3a3a3a;background:#111;color:#ddd;padding:10px;border-radius:8px;font-weight:800;cursor:pointer}.tab.active{background:#ffc42d;border-color:#ffc42d;color:#111}label{display:block;margin:17px 0 7px;font-weight:700}input{width:100%;box-sizing:border-box;border:1px solid #3a3a3a;border-radius:9px;background:#111;color:#fff;padding:13px;font:inherit}button.submit{width:100%;margin-top:24px;border:0;border-radius:9px;background:#ffc42d;color:#111;padding:13px;font:800 16px Inter,system-ui;cursor:pointer}button:disabled{opacity:.65;cursor:wait}.status{min-height:22px;margin:16px 0 0;color:#ffb0b0;line-height:1.4}.back{display:block;margin-top:21px;color:#ffc42d;text-align:center;text-decoration:none}.form[hidden]{display:none}.password-guidance{margin-top:12px;padding:14px;border:1px solid #39342a;border-radius:10px;background:#14130f}.password-guidance>strong{display:block;font:700 12px Sora,system-ui;color:#ffe1a0;letter-spacing:.02em}.password-progress{height:5px;margin:10px 0 12px;overflow:hidden;border-radius:99px;background:#332d1d}.password-progress>span{display:block;width:0;height:100%;border-radius:inherit;background:#f0b63d;transition:width .28s ease,background .28s ease}.password-rules{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:0;padding:0;list-style:none;font-size:12px}.password-rules li{display:flex;align-items:center;gap:7px;color:#e1b45d;line-height:1.25;transition:color .25s ease,transform .25s ease}.password-rules li::before{content:'×';display:grid;place-items:center;width:17px;height:17px;flex:0 0 17px;border-radius:50%;background:#553d21;color:#ffc76b;font:800 13px/1 Inter,system-ui;transition:background .25s ease,color .25s ease,transform .25s ease}.password-rules li.ok{color:#91dfae;animation:rule-ok .32s ease}.password-rules li.ok::before{content:'✓';background:#1d583b;color:#75e5a2;transform:scale(1.12)}.password-guidance.complete{border-color:#286943}.password-guidance.complete>strong{color:#91dfae}.password-guidance.complete .password-progress>span{background:#49cf7d}@keyframes rule-ok{0%{transform:translateX(-3px)}60%{transform:translateX(2px)}100%{transform:translateX(0)}}@media(max-width:390px){.password-rules{grid-template-columns:1fr}}
+    body{min-height:100vh;margin:0;display:grid;place-items:center;background:#0b0b0c;color:#f5f5f5;font:16px Inter,system-ui,sans-serif}.login{width:min(100% - 40px,420px);box-sizing:border-box;padding:34px;background:#171717;border:1px solid #303030;border-radius:16px;box-shadow:0 24px 70px #0008}.brand{margin:0;color:#ffc42d;font:800 30px Sora,system-ui}.tagline{margin:3px 0 27px;color:#aaa}.tabs{display:flex;gap:8px;margin-bottom:18px}.tab{flex:1;border:1px solid #3a3a3a;background:#111;color:#ddd;padding:10px;border-radius:8px;font-weight:800;cursor:pointer}.tab.active{background:#ffc42d;border-color:#ffc42d;color:#111}label{display:block;margin:17px 0 7px;font-weight:700}input{width:100%;box-sizing:border-box;border:1px solid #3a3a3a;border-radius:9px;background:#111;color:#fff;padding:13px;font:inherit}button.submit{width:100%;margin-top:24px;border:0;border-radius:9px;background:#ffc42d;color:#111;padding:13px;font:800 16px Inter,system-ui;cursor:pointer}button:disabled{opacity:.65;cursor:wait}.status{display:none;margin:16px 0 0;padding:12px 14px;border:1px solid #3a3a3a;border-radius:9px;background:#202020;color:#d4d4d4;line-height:1.4;font-size:14px}.status:not(:empty){display:block}.status.error{border-color:#6d3d3a;background:#251a1a;color:#ffb0b0}.status.success{border-color:#2d714c;background:#13251a;color:#91e5b0}.status.info{border-color:#4b4b4b;background:#1d1d1d;color:#c9c9c9}.back{display:block;margin-top:21px;color:#ffc42d;text-align:center;text-decoration:none}.form[hidden]{display:none}.password-guidance{margin-top:12px;padding:14px;border:1px solid #39342a;border-radius:10px;background:#14130f}.password-guidance>strong{display:block;font:700 12px Sora,system-ui;color:#ffe1a0;letter-spacing:.02em}.password-progress{height:5px;margin:10px 0 12px;overflow:hidden;border-radius:99px;background:#332d1d}.password-progress>span{display:block;width:0;height:100%;border-radius:inherit;background:#f0b63d;transition:width .28s ease,background .28s ease}.password-rules{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:0;padding:0;list-style:none;font-size:12px}.password-rules li{display:flex;align-items:center;gap:7px;color:#e1b45d;line-height:1.25;transition:color .25s ease,transform .25s ease}.password-rules li::before{content:'×';display:grid;place-items:center;width:17px;height:17px;flex:0 0 17px;border-radius:50%;background:#553d21;color:#ffc76b;font:800 13px/1 Inter,system-ui;transition:background .25s ease,color .25s ease,transform .25s ease}.password-rules li.ok{color:#91dfae;animation:rule-ok .32s ease}.password-rules li.ok::before{content:'✓';background:#1d583b;color:#75e5a2;transform:scale(1.12)}.password-guidance.complete{border-color:#286943}.password-guidance.complete>strong{color:#91dfae}.password-guidance.complete .password-progress>span{background:#49cf7d}@keyframes rule-ok{0%{transform:translateX(-3px)}60%{transform:translateX(2px)}100%{transform:translateX(0)}}@media(max-width:390px){.password-rules{grid-template-columns:1fr}}
+  </style>
+  <style>
+    .forgot{display:block;margin:12px 0 0 auto;padding:7px 10px;border:1px solid transparent;border-radius:7px;background:transparent;color:#ffcf4d;font:700 13px Inter,system-ui;cursor:pointer;transition:background .18s ease,border-color .18s ease,color .18s ease}.forgot:hover{border-color:#5c4a1a;background:#221c0d;color:#ffe19a}.forgot:focus-visible{outline:2px solid #ffc42d;outline-offset:2px}.recovery-note{margin:0;color:#aaa;line-height:1.45;font-size:14px}
   </style>
 </head>
 <body>
   <main class="login">
     <h1 class="brand">ECONOMIZAÍ</h1>
     <p class="tagline">Entre para acompanhar ofertas e cuidar da sua conta.</p>
-    <div class="tabs"><button class="tab active" type="button" data-mode="login">Entrar</button><button class="tab" type="button" data-mode="signup">Criar conta</button></div>
+    <div class="tabs" id="authTabs"><button class="tab active" type="button" data-mode="login">Entrar</button><button class="tab" type="button" data-mode="signup">Criar conta</button></div>
     <form class="form" id="loginForm">
       <label for="email">E-mail</label>
       <input id="email" type="email" autocomplete="email" required>
       <label for="password">Senha</label>
       <input id="password" type="password" autocomplete="current-password" required>
       <button class="submit" type="submit">Entrar</button>
+      <button class="forgot" id="forgotPassword" type="button">Esqueci minha senha!</button>
     </form>
     <form class="form" id="signupForm" hidden>
       <label for="signupName">Nome</label>
@@ -30,6 +34,22 @@
       <input id="signupPassword" type="password" autocomplete="new-password" required minlength="8" aria-describedby="passwordRules">
       <div class="password-guidance" id="passwordGuidance"><strong>Crie uma senha segura</strong><div class="password-progress" aria-hidden="true"><span id="passwordProgress"></span></div><ul class="password-rules" id="passwordRules"><li data-rule="lower">Uma letra minúscula</li><li data-rule="special">Um caractere especial</li><li data-rule="upper">Uma letra maiúscula</li><li data-rule="length">Mínimo de 8 caracteres</li><li data-rule="number">Um número</li></ul></div>
       <button class="submit" type="submit">Criar minha conta</button>
+    </form>
+    <form class="form" id="recoveryForm" hidden>
+      <p class="recovery-note">Informe seu e-mail e enviaremos um link seguro para redefinir sua senha.</p>
+      <label for="recoveryEmail">E-mail</label>
+      <input id="recoveryEmail" type="email" autocomplete="email" required>
+      <button class="submit" type="submit">Enviar link de recuperação</button>
+      <button class="forgot" type="button" data-mode="login">Voltar para entrar</button>
+    </form>
+    <form class="form" id="resetForm" hidden>
+      <p class="recovery-note">Crie uma nova senha para sua conta.</p>
+      <label for="resetPassword">Nova senha</label>
+      <input id="resetPassword" type="password" autocomplete="new-password" required minlength="8" aria-describedby="resetPasswordRules">
+      <div class="password-guidance" id="resetPasswordGuidance"><strong>Crie uma senha segura</strong><div class="password-progress" aria-hidden="true"><span id="resetPasswordProgress"></span></div><ul class="password-rules" id="resetPasswordRules"><li data-reset-rule="lower">Uma letra minúscula</li><li data-reset-rule="special">Um caractere especial</li><li data-reset-rule="upper">Uma letra maiúscula</li><li data-reset-rule="length">Mínimo de 8 caracteres</li><li data-reset-rule="number">Um número</li></ul></div>
+      <label for="resetPasswordConfirm">Confirmar nova senha</label>
+      <input id="resetPasswordConfirm" type="password" autocomplete="new-password" required minlength="8">
+      <button class="submit" type="submit">Salvar nova senha</button>
     </form>
     <p class="status" id="status" aria-live="polite"></p>
     <a class="back" href="index.html">← Voltar ao site</a>

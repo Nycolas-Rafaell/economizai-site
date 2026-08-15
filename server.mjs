@@ -8,17 +8,23 @@ import { createSupabaseOfferStore } from './supabase-store.mjs';
 const siteDirectory = path.dirname(fileURLToPath(import.meta.url));
 const offersPath = path.join(siteDirectory, 'data', 'ofertas.json');
 const tokenPath = path.join(siteDirectory, '.ml_tokens.json');
+const legacyAssetPaths = {
+  '/redragon-h510-pro.png': '/assets/products/redragon-h510-pro.png',
+  '/lencos-personalidade-baby.png': '/assets/products/lencos-personalidade-baby.png',
+  '/microfone-gamer-rgb.png': '/assets/products/microfone-gamer-rgb.png',
+};
 const config = { ...loadEnv(path.join(siteDirectory, '.env')), ...process.env };
 const supabaseStore = createSupabaseOfferStore(config);
 const port = Number(config.PORT || 3000);
 const adminEmail = String(config.ADMIN_EMAIL || '').trim().toLowerCase();
 let oauthAttempt;
 let avatarBucketReady;
+let fullLogoBuffer;
 
 const initialOffers = [
-  { id: 'oferta-redragon', marketplace: 'mercado_livre', category: 'perifericos', title: 'Headset sem fio Redragon H510-PRO preto com luz LED', image: 'redragon-h510-pro.png', currentPrice: 333.68, originalPrice: 489.66, discountPct: 31, currency: 'BRL', freeShipping: false, publicUrl: 'https://www.mercadolivre.com.br/', affiliateUrl: 'https://meli.la/2FwH9gX', description: 'Headset gamer sem fio com iluminação LED, microfone e conexão pensada para jogos e chamadas. É uma opção para quem busca mobilidade, conforto e som imersivo nas partidas.', reviewSummary: 'As avaliações destacam a boa qualidade de som e o conforto do ajuste. A conexão sem fio e a autonomia também são citadas como pontos positivos para jogos competitivos.', rating: '4,9', reviewCount: '10.387', commentCount: '4.987', available: true },
-  { id: 'oferta-lencos', marketplace: 'mercado_livre', category: 'outros', title: 'Kit com 3 Lenços Umedecidos Personalidade Baby, 100 unidades cada', image: 'lencos-personalidade-baby.png', currentPrice: 23.17, originalPrice: 26.52, discountPct: 12, currency: 'BRL', freeShipping: false, publicUrl: 'https://www.mercadolivre.com.br/', affiliateUrl: 'https://meli.la/2KGTwzC', description: 'Kit com três pacotes de lenços umedecidos Personalidade Baby, com 100 unidades cada, totalizando 300 toalhas. Possui tampa puxa-fácil, ajuda a manter a pele limpa, macia e fresca e pode ser usado por toda a família.', reviewSummary: 'O kit é muito recomendado por sua qualidade e custo-benefício. Usuários elogiam a textura macia, a fragrância agradável e a versatilidade para crianças e adultos.', rating: '4,8', reviewCount: '8', commentCount: '109', available: true },
-  { id: 'oferta-microfone', marketplace: 'mercado_livre', category: 'perifericos', title: 'Microfone Gamer Profissional Condensador para PC com LED RGB', image: 'microfone-gamer-rgb.png', currentPrice: 99.50, originalPrice: 199, discountPct: 50, currency: 'BRL', freeShipping: false, publicUrl: 'https://www.mercadolivre.com.br/', affiliateUrl: 'https://meli.la/1v2nGj5', description: 'Microfone USB com captação cardioide, iluminação RGB e conexão Plug & Play. É compatível com PC, Mac e USB-C, inclui base reforçada e suporte antivibração para reduzir ruídos de teclado e mouse.', reviewSummary: 'As opiniões elogiam a qualidade de áudio e a captação clara, especialmente para lives, reuniões e jogos. O produto também é considerado um bom custo-benefício.', rating: '4,7', reviewCount: '98', commentCount: '157', available: true },
+  { id: 'oferta-redragon', marketplace: 'mercado_livre', category: 'perifericos', title: 'Headset sem fio Redragon H510-PRO preto com luz LED', image: 'assets/products/redragon-h510-pro.png', currentPrice: 333.68, originalPrice: 489.66, discountPct: 31, currency: 'BRL', freeShipping: false, publicUrl: 'https://www.mercadolivre.com.br/', affiliateUrl: 'https://meli.la/2FwH9gX', description: 'Headset gamer sem fio com iluminação LED, microfone e conexão pensada para jogos e chamadas. É uma opção para quem busca mobilidade, conforto e som imersivo nas partidas.', reviewSummary: 'As avaliações destacam a boa qualidade de som e o conforto do ajuste. A conexão sem fio e a autonomia também são citadas como pontos positivos para jogos competitivos.', rating: '4,9', reviewCount: '10.387', commentCount: '4.987', available: true },
+  { id: 'oferta-lencos', marketplace: 'mercado_livre', category: 'outros', title: 'Kit com 3 Lenços Umedecidos Personalidade Baby, 100 unidades cada', image: 'assets/products/lencos-personalidade-baby.png', currentPrice: 23.17, originalPrice: 26.52, discountPct: 12, currency: 'BRL', freeShipping: false, publicUrl: 'https://www.mercadolivre.com.br/', affiliateUrl: 'https://meli.la/2KGTwzC', description: 'Kit com três pacotes de lenços umedecidos Personalidade Baby, com 100 unidades cada, totalizando 300 toalhas. Possui tampa puxa-fácil, ajuda a manter a pele limpa, macia e fresca e pode ser usado por toda a família.', reviewSummary: 'O kit é muito recomendado por sua qualidade e custo-benefício. Usuários elogiam a textura macia, a fragrância agradável e a versatilidade para crianças e adultos.', rating: '4,8', reviewCount: '8', commentCount: '109', available: true },
+  { id: 'oferta-microfone', marketplace: 'mercado_livre', category: 'perifericos', title: 'Microfone Gamer Profissional Condensador para PC com LED RGB', image: 'assets/products/microfone-gamer-rgb.png', currentPrice: 99.50, originalPrice: 199, discountPct: 50, currency: 'BRL', freeShipping: false, publicUrl: 'https://www.mercadolivre.com.br/', affiliateUrl: 'https://meli.la/1v2nGj5', description: 'Microfone USB com captação cardioide, iluminação RGB e conexão Plug & Play. É compatível com PC, Mac e USB-C, inclui base reforçada e suporte antivibração para reduzir ruídos de teclado e mouse.', reviewSummary: 'As opiniões elogiam a qualidade de áudio e a captação clara, especialmente para lives, reuniões e jogos. O produto também é considerado um bom custo-benefício.', rating: '4,7', reviewCount: '98', commentCount: '157', available: true },
   { id: 'oferta-headset-usb', marketplace: 'mercado_livre', category: 'perifericos', title: 'Headset Gamer 7.1 USB com Microfone', image: null, currentPrice: 142.90, originalPrice: 219, discountPct: 35, currency: 'BRL', freeShipping: false, publicUrl: 'https://www.mercadolivre.com.br/', affiliateUrl: 'https://www.mercadolivre.com.br/', available: true },
   { id: 'oferta-teclado', marketplace: 'shopee', category: 'perifericos', title: 'Teclado Mecânico RGB Switch Red ABNT2', image: null, currentPrice: 179.90, originalPrice: 349.90, discountPct: 49, currency: 'BRL', freeShipping: false, publicUrl: 'https://shopee.com.br/', affiliateUrl: 'https://shopee.com.br/', available: true },
   { id: 'oferta-ssd', marketplace: 'mercado_livre', category: 'hardware', title: 'SSD NVMe 1TB Leitura 5000MB/s', image: null, currentPrice: 219.90, originalPrice: 599, discountPct: 63, currency: 'BRL', freeShipping: false, publicUrl: 'https://www.mercadolivre.com.br/', affiliateUrl: 'https://www.mercadolivre.com.br/', available: true },
@@ -49,6 +55,16 @@ function sendJson(response, status, body, headers = {}) {
   send(response, status, JSON.stringify(body, null, 2), 'application/json; charset=utf-8', headers);
 }
 
+function getFullLogoBuffer() {
+  if (fullLogoBuffer) return fullLogoBuffer;
+  const homepage = fs.readFileSync(path.join(siteDirectory, 'index.html'), 'utf8');
+  const encoded = homepage.match(/<img\s+class="hero-logo"\s+src="data:image\/png;base64,([^"]+)"/i)?.[1];
+  fullLogoBuffer = encoded
+    ? Buffer.from(encoded, 'base64')
+    : fs.readFileSync(path.join(siteDirectory, 'assets', 'logo-economizai.png'));
+  return fullLogoBuffer;
+}
+
 function getCookie(request, name) {
   const entry = String(request.headers.cookie || '').split(';').map((value) => value.trim())
     .find((value) => value.startsWith(`${name}=`));
@@ -70,6 +86,9 @@ async function requireUser(request) {
   });
   const user = await userResponse.json().catch(() => null);
   if (!userResponse.ok || !user?.email) return { ok: false, status: 401, message: 'Sua sessão expirou. Entre novamente.' };
+  const account = accountAccessState(user);
+  if (account.status === 'banned') return { ok: false, status: 403, message: 'Esta conta foi banida. Entre em contato caso acredite que isso foi um engano.' };
+  if (account.status === 'suspended') return { ok: false, status: 403, message: `Esta conta está suspensa até ${new Date(account.until).toLocaleString('pt-BR')}.` };
   return {
     ok: true, token,
     user: {
@@ -79,17 +98,124 @@ async function requireUser(request) {
       displayName: String(user.user_metadata?.display_name || '').trim(),
       avatarId: /^avatar-[1-6]$/.test(String(user.user_metadata?.avatar_id || '')) ? user.user_metadata.avatar_id : 'avatar-1',
       avatarUrl: String(user.user_metadata?.avatar_url || '').trim(),
+      phone: String(user.user_metadata?.phone || '').trim(),
+      role: user.app_metadata?.economizai_role === 'admin' ? 'admin' : 'user',
     },
   };
+}
+
+function accountAccessState(user) {
+  const metadata = user?.app_metadata || {};
+  if (metadata.economizai_account_status === 'banned') return { status: 'banned', until: null };
+  const suspendedUntil = metadata.economizai_suspended_until ? new Date(metadata.economizai_suspended_until) : null;
+  if (metadata.economizai_account_status === 'suspended' && suspendedUntil && suspendedUntil.getTime() > Date.now()) {
+    return { status: 'suspended', until: suspendedUntil.toISOString() };
+  }
+  return { status: 'active', until: null };
+}
+
+function isAdministrator(user) {
+  return Boolean(user && (
+    (adminEmail && String(user.email || '').toLowerCase() === adminEmail)
+    || user.role === 'admin'
+  ));
+}
+
+function isPrimaryAdministrator(user) {
+  return Boolean(adminEmail && String(user?.email || '').trim().toLowerCase() === adminEmail);
 }
 
 async function requireAdmin(request) {
   const authentication = await requireUser(request);
   if (!authentication.ok) return authentication;
-  if (!adminEmail) return { ok: false, status: 503, message: 'Defina ADMIN_EMAIL no arquivo .env para concluir a proteção do painel.' };
-  const { user } = authentication;
-  if (String(user.email).toLowerCase() !== adminEmail) return { ok: false, status: 403, message: 'Esta conta não possui acesso administrativo.' };
+  if (!isAdministrator(authentication.user)) return { ok: false, status: 403, message: 'Esta conta não possui acesso administrativo.' };
   return { ...authentication, isAdmin: true };
+}
+
+async function listAuthUsers() {
+  const authResponse = await fetch(`${String(config.SUPABASE_URL).replace(/\/$/, '')}/auth/v1/admin/users?page=1&per_page=1000`, {
+    headers: { apikey: config.SUPABASE_SECRET_KEY, Authorization: `Bearer ${config.SUPABASE_SECRET_KEY}`, Accept: 'application/json' },
+  });
+  const payload = await authResponse.json().catch(() => null);
+  if (!authResponse.ok) throw Object.assign(new Error(payload?.message || 'Não foi possível carregar os usuários cadastrados.'), { status: authResponse.status || 502 });
+  return Array.isArray(payload?.users) ? payload.users : (Array.isArray(payload) ? payload : []);
+}
+
+async function adminAuthRequest(userId, method, body, fallbackMessage) {
+  const authResponse = await fetch(`${String(config.SUPABASE_URL).replace(/\/$/, '')}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+    method,
+    headers: { apikey: config.SUPABASE_SECRET_KEY, Authorization: `Bearer ${config.SUPABASE_SECRET_KEY}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+  const payload = await authResponse.json().catch(() => null);
+  if (!authResponse.ok) throw Object.assign(new Error(payload?.message || fallbackMessage), { status: authResponse.status || 502 });
+  return payload?.user || payload;
+}
+
+function publicAdminUser(user) {
+  const email = String(user.email || '').trim();
+  const primary = Boolean(adminEmail && email.toLowerCase() === adminEmail);
+  const role = primary || user.app_metadata?.economizai_role === 'admin' ? 'admin' : 'user';
+  const account = accountAccessState(user);
+  return {
+    id: user.id,
+    email,
+    name: String(user.user_metadata?.full_name || '').trim(),
+    displayName: String(user.user_metadata?.display_name || '').trim(),
+    avatarId: /^avatar-[1-6]$/.test(String(user.user_metadata?.avatar_id || '')) ? user.user_metadata.avatar_id : 'avatar-1',
+    avatarUrl: String(user.user_metadata?.avatar_url || '').trim(),
+    role,
+    primary,
+    accountStatus: account.status,
+    suspendedUntil: account.until,
+    moderationNote: String(user.app_metadata?.economizai_moderation_note || '').trim(),
+    confirmedAt: user.email_confirmed_at || null,
+    createdAt: user.created_at || null,
+    lastSignInAt: user.last_sign_in_at || null,
+  };
+}
+
+async function updateUserRole(userId, role, actor) {
+  const users = await listAuthUsers();
+  const target = users.find((user) => user.id === userId);
+  if (!target) throw Object.assign(new Error('Usuário não encontrado.'), { status: 404 });
+  const targetEmail = String(target.email || '').trim().toLowerCase();
+  if (adminEmail && targetEmail === adminEmail) throw Object.assign(new Error('O administrador principal é definido pelo ADMIN_EMAIL e não pode ter a permissão alterada aqui.'), { status: 400 });
+  const nextRole = role === 'admin' ? 'admin' : role === 'user' ? 'user' : null;
+  if (!nextRole) throw Object.assign(new Error('Permissão inválida.'), { status: 400 });
+  if (adminEmail && (target.app_metadata?.economizai_role === 'admin' || nextRole === 'admin') && !isPrimaryAdministrator(actor)) {
+    throw Object.assign(new Error('Somente o administrador principal pode conceder, remover ou alterar contas administrativas.'), { status: 403 });
+  }
+  const updated = await adminAuthRequest(userId, 'PUT', { app_metadata: { ...(target.app_metadata || {}), economizai_role: nextRole } }, 'Não foi possível atualizar a permissão.');
+  return publicAdminUser(updated || { ...target, app_metadata: { ...(target.app_metadata || {}), economizai_role: nextRole } });
+}
+
+async function manageUserAccount(userId, action, note = '', actor) {
+  const users = await listAuthUsers();
+  const target = users.find((user) => user.id === userId);
+  if (!target) throw Object.assign(new Error('Usuário não encontrado.'), { status: 404 });
+  if (adminEmail && String(target.email || '').trim().toLowerCase() === adminEmail) throw Object.assign(new Error('O administrador principal não pode ser suspenso, banido ou excluído por este painel.'), { status: 400 });
+  if (adminEmail && target.app_metadata?.economizai_role === 'admin' && !isPrimaryAdministrator(actor)) throw Object.assign(new Error('Somente o administrador principal pode moderar contas administrativas.'), { status: 403 });
+  const actions = { active: null, suspend_24h: 24, suspend_7d: 24 * 7, suspend_30d: 24 * 30, ban: 'ban' };
+  if (!(action in actions) && action !== 'delete') throw Object.assign(new Error('Ação de moderação inválida.'), { status: 400 });
+  if (action === 'delete') {
+    await adminAuthRequest(userId, 'DELETE', null, 'Não foi possível excluir a conta.');
+    return { deleted: true, id: userId };
+  }
+  const hours = actions[action];
+  const suspendedUntil = typeof hours === 'number' ? new Date(Date.now() + hours * 3_600_000).toISOString() : null;
+  const nextStatus = action === 'ban' ? 'banned' : typeof hours === 'number' ? 'suspended' : 'active';
+  const updated = await adminAuthRequest(userId, 'PUT', {
+    ban_duration: action === 'ban' ? '876000h' : typeof hours === 'number' ? `${hours}h` : 'none',
+    app_metadata: {
+      ...(target.app_metadata || {}),
+      economizai_account_status: nextStatus,
+      economizai_suspended_until: suspendedUntil,
+      economizai_moderation_note: String(note || '').trim().slice(0, 500) || null,
+      economizai_moderated_at: new Date().toISOString(),
+    },
+  }, 'Não foi possível atualizar o status da conta.');
+  return publicAdminUser(updated || { ...target, app_metadata: { ...(target.app_metadata || {}), economizai_account_status: nextStatus, economizai_suspended_until: suspendedUntil } });
 }
 
 async function loginUser(email, password) {
@@ -107,24 +233,86 @@ async function loginUser(email, password) {
     }
     throw Object.assign(new Error('E-mail ou senha inválidos.'), { status: 401 });
   }
+  const account = accountAccessState(session.user);
+  if (account.status === 'banned') throw Object.assign(new Error('Esta conta foi banida. Entre em contato caso acredite que isso foi um engano.'), { status: 403 });
+  if (account.status === 'suspended') throw Object.assign(new Error(`Esta conta está suspensa até ${new Date(account.until).toLocaleString('pt-BR')}.`), { status: 403 });
   return session;
+}
+
+async function emailJaCadastrado(email) {
+  const authResponse = await fetch(`${String(config.SUPABASE_URL).replace(/\/$/, '')}/auth/v1/admin/users?page=1&per_page=1000`, {
+    headers: { apikey: config.SUPABASE_SECRET_KEY, Authorization: `Bearer ${config.SUPABASE_SECRET_KEY}`, Accept: 'application/json' },
+  });
+  if (!authResponse.ok) return false;
+  const payload = await authResponse.json().catch(() => null);
+  const users = Array.isArray(payload?.users) ? payload.users : (Array.isArray(payload) ? payload : []);
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  return users.some((user) => String(user.email || '').trim().toLowerCase() === normalizedEmail);
 }
 
 async function signupUser(name, email, password) {
   if (!supabaseStore.enabled) throw Object.assign(new Error('Configure o Supabase antes de criar uma conta.'), { status: 503 });
+  if (await emailJaCadastrado(email)) {
+    throw Object.assign(new Error('Este e-mail já está em uso. Entre na sua conta ou use a recuperação de senha.'), { status: 409, code: 'email_already_in_use' });
+  }
   const authResponse = await fetch(`${String(config.SUPABASE_URL).replace(/\/$/, '')}/auth/v1/signup`, {
     method: 'POST',
     headers: { apikey: config.SUPABASE_SECRET_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({ email: String(email).trim(), password: String(password), data: { full_name: String(name || '').trim().slice(0, 80), display_name: String(name || '').trim().slice(0, 80), avatar_id: 'avatar-1' } }),
   });
   const payload = await authResponse.json().catch(() => null);
-  if (!authResponse.ok || !payload?.user) throw Object.assign(new Error(payload?.msg || payload?.message || 'Não foi possível criar a conta.'), { status: authResponse.status || 400 });
-  return payload;
+  const user = payload?.user || (payload?.id ? payload : null);
+  const rawMessage = String(payload?.msg || payload?.message || payload?.error_description || payload?.error || '');
+  if (/already registered|already been registered|email.*exist|user.*exist/i.test(rawMessage)) {
+    throw Object.assign(new Error('Este e-mail já está em uso. Entre na sua conta ou use a recuperação de senha.'), { status: 409, code: 'email_already_in_use' });
+  }
+  // Com confirmação de e-mail ativada, o Supabase pode responder 200 com um usuário
+  // ofuscado e sem identidades quando o e-mail já está cadastrado.
+  if (Array.isArray(user?.identities) && user.identities.length === 0) {
+    throw Object.assign(new Error('Este e-mail já está em uso. Entre na sua conta ou use a recuperação de senha.'), { status: 409, code: 'email_already_in_use' });
+  }
+  if (!authResponse.ok || !user) throw Object.assign(new Error(rawMessage || 'Não foi possível criar a conta.'), { status: authResponse.status || 400 });
+  return payload?.user ? payload : { ...payload, user };
 }
 
 function validPassword(password) {
   const value = String(password || '');
   return value.length >= 8 && /[a-z]/.test(value) && /[A-Z]/.test(value) && /\d/.test(value) && /[^A-Za-z0-9]/.test(value);
+}
+
+function publicSiteOrigin(request) {
+  const configured = String(config.SITE_URL || config.APP_URL || '').trim();
+  if (/^https?:\/\//i.test(configured)) return configured.replace(/\/$/, '');
+  const host = String(request.headers.host || `localhost:${port}`).replace(/[^a-zA-Z0-9.:[\]-]/g, '');
+  return `http://${host}`;
+}
+
+async function sendPasswordRecoveryEmail(request, email) {
+  if (!supabaseStore.enabled) throw Object.assign(new Error('Configure o Supabase antes de recuperar a senha.'), { status: 503 });
+  const redirectTo = `${publicSiteOrigin(request)}/login.html?recuperar=1`;
+  const authResponse = await fetch(`${String(config.SUPABASE_URL).replace(/\/$/, '')}/auth/v1/recover`, {
+    method: 'POST',
+    headers: { apikey: config.SUPABASE_SECRET_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ email: String(email || '').trim(), redirect_to: redirectTo }),
+  });
+  if (!authResponse.ok) {
+    const payload = await authResponse.json().catch(() => null);
+    throw Object.assign(new Error(String(payload?.msg || payload?.message || 'Não foi possível enviar o link de recuperação agora.')), { status: authResponse.status || 400 });
+  }
+}
+
+async function updatePasswordFromRecovery(accessToken, password) {
+  if (!validPassword(password)) throw Object.assign(new Error('A senha deve ter ao menos 8 caracteres, letra minúscula, maiúscula, número e caractere especial.'), { status: 400 });
+  if (!accessToken) throw Object.assign(new Error('O link de recuperação é inválido ou expirou. Solicite um novo link.'), { status: 401 });
+  const authResponse = await fetch(`${String(config.SUPABASE_URL).replace(/\/$/, '')}/auth/v1/user`, {
+    method: 'PUT',
+    headers: { apikey: config.SUPABASE_SECRET_KEY, Authorization: `Bearer ${String(accessToken)}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ password: String(password) }),
+  });
+  if (!authResponse.ok) {
+    const payload = await authResponse.json().catch(() => null);
+    throw Object.assign(new Error(String(payload?.msg || payload?.message || 'O link de recuperação é inválido ou expirou. Solicite um novo link.')), { status: authResponse.status || 401 });
+  }
 }
 
 async function ensureAvatarBucket() {
@@ -235,6 +423,77 @@ function getLocalOffers() {
 
 async function getAllOffers() {
   return supabaseStore.enabled ? supabaseStore.listOffers() : getLocalOffers();
+}
+
+const analyticsCategoryNames = {
+  games: 'Games', hardware: 'Hardware', informatica: 'Informática', perifericos: 'Periféricos',
+  smartphones: 'Celulares e Tablets', 'tvs-audio': 'TVs e Áudio', 'casa-cozinha': 'Casa e Cozinha',
+  bebes: 'Bebês e Crianças', 'saude-beleza': 'Saúde e Beleza', 'ferramentas-auto': 'Ferramentas e Auto',
+  'moda-acessorios': 'Moda e Acessórios', 'esporte-lazer': 'Esporte e Lazer', 'pet-shop': 'Pet Shop',
+  supermercado: 'Supermercado', 'livros-papelaria': 'Livros e Papelaria', outros: 'Outros',
+};
+
+function normalizeAnalyticsValue(value, max = 120) {
+  return String(value || '').trim().slice(0, max);
+}
+
+async function getAnalytics(days) {
+  const periodDays = Math.max(1, Math.min(Number(days) || 30, 90));
+  const since = new Date(Date.now() - (periodDays - 1) * 86_400_000).toISOString();
+  const events = await supabaseRest(`site_events?select=event_type,session_id,page_path,offer_external_id,category_slug,created_at&created_at=gte.${encodeURIComponent(since)}&order=created_at.asc&limit=10000`);
+  const offers = await getAllOffers();
+  const offersById = new Map(offers.map((offer) => [String(offer.id), offer]));
+  const eventList = Array.isArray(events) ? events : [];
+  const sessions = new Set(eventList.filter((event) => event.event_type === 'page_view').map((event) => event.session_id));
+  const count = (type) => eventList.filter((event) => event.event_type === type).length;
+  const top = (items, labelFor) => [...items.entries()].map(([key, value]) => ({ label: labelFor(key), value }))
+    .filter((item) => item.label).sort((a, b) => b.value - a.value || a.label.localeCompare(b.label, 'pt-BR')).slice(0, 6);
+  const offerCounts = new Map(); const categoryCounts = new Map(); const marketplaceCounts = new Map();
+  eventList.forEach((event) => {
+    const offer = offersById.get(String(event.offer_external_id || ''));
+    if (event.event_type === 'offer_view' && offer) {
+      offerCounts.set(offer.id, (offerCounts.get(offer.id) || 0) + 1);
+      const category = offer.category || 'outros';
+      categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
+    }
+    if (event.event_type === 'category_view' && event.category_slug) {
+      categoryCounts.set(event.category_slug, (categoryCounts.get(event.category_slug) || 0) + 1);
+    }
+    if (event.event_type === 'affiliate_click' && offer) {
+      const marketplace = offer.marketplace === 'shopee' ? 'Shopee' : offer.marketplace === 'amazon' ? 'Amazon' : offer.marketplace === 'aliexpress' ? 'AliExpress' : 'Mercado Livre';
+      marketplaceCounts.set(marketplace, (marketplaceCounts.get(marketplace) || 0) + 1);
+    }
+  });
+  const dailyMap = new Map();
+  for (let index = periodDays - 1; index >= 0; index -= 1) {
+    const date = new Date(); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() - index);
+    dailyMap.set(date.toLocaleDateString('sv-SE'), 0);
+  }
+  eventList.filter((event) => event.event_type === 'page_view').forEach((event) => {
+    const date = new Date(event.created_at).toLocaleDateString('sv-SE');
+    if (dailyMap.has(date)) dailyMap.set(date, dailyMap.get(date) + 1);
+  });
+  const offerViews = count('offer_view'); const affiliateClicks = count('affiliate_click');
+  const statusOf = (offer) => offer.availabilityStatus || (offer.available === false ? 'unavailable' : 'available');
+  return {
+    periodDays,
+    metrics: {
+      pageViews: count('page_view'), visitors: sessions.size, offerViews, affiliateClicks,
+      interestRate: offerViews ? Number(((affiliateClicks / offerViews) * 100).toFixed(1)) : 0,
+    },
+    daily: [...dailyMap.entries()].map(([date, value]) => {
+      const parsed = new Date(`${date}T12:00:00`);
+      return { value, label: parsed.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), shortLabel: parsed.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) };
+    }),
+    topOffers: top(offerCounts, (id) => offersById.get(String(id))?.title || ''),
+    topCategories: top(categoryCounts, (id) => analyticsCategoryNames[id] || id),
+    marketplaces: top(marketplaceCounts, (name) => name),
+    catalog: {
+      available: offers.filter((offer) => statusOf(offer) === 'available').length,
+      pending: offers.filter((offer) => statusOf(offer) === 'pending').length,
+      unavailable: offers.filter((offer) => statusOf(offer) === 'unavailable').length,
+    },
+  };
 }
 
 function loadTokens() {
@@ -491,14 +750,14 @@ function normalizeManualOffer(data) {
   };
 }
 
-async function saveOffer(offer) {
+async function saveOffer(offer, priceSource = 'painel') {
   if (supabaseStore.enabled) {
     const existingOffer = (await getAllOffers()).find((savedOffer) => savedOffer.id === offer.id || savedOffer.publicUrl === offer.publicUrl);
     const previousHistory = Array.isArray(existingOffer?.priceHistory) ? existingOffer.priceHistory : [];
     const lastPrice = previousHistory.at(-1)?.price;
     const priceHistory = Array.isArray(offer.priceHistory) && offer.priceHistory.length
       ? offer.priceHistory
-      : lastPrice === offer.currentPrice ? previousHistory : [...previousHistory, { price: offer.currentPrice, at: new Date().toISOString() }].slice(-24);
+      : lastPrice === offer.currentPrice ? previousHistory : [...previousHistory, { price: offer.currentPrice, at: new Date().toISOString(), source: priceSource }];
     const finalOffer = { ...(existingOffer ? { ...offer, id: existingOffer.id, createdAt: existingOffer.createdAt } : offer), priceHistory };
     return supabaseStore.saveOffer(finalOffer);
   }
@@ -508,7 +767,7 @@ async function saveOffer(offer) {
   const lastPrice = previousHistory.at(-1)?.price;
   const priceHistory = lastPrice === offer.currentPrice
     ? previousHistory
-    : [...previousHistory, { price: offer.currentPrice, at: new Date().toISOString() }].slice(-24);
+    : [...previousHistory, { price: offer.currentPrice, at: new Date().toISOString(), source: priceSource }];
   const finalOffer = { ...(existingOffer ? { ...offer, id: existingOffer.id, createdAt: existingOffer.createdAt } : offer), priceHistory };
   const savedIndex = savedOffers.findIndex((savedOffer) => savedOffer.id === finalOffer.id);
   if (savedIndex >= 0) savedOffers[savedIndex] = finalOffer;
@@ -517,10 +776,10 @@ async function saveOffer(offer) {
   return finalOffer;
 }
 
-function appendPriceHistory(offer, price, now) {
+function appendPriceHistory(offer, price, now, source = 'monitoramento') {
   const history = Array.isArray(offer.priceHistory) ? offer.priceHistory : [];
   const lastPrice = history.at(-1)?.price;
-  return lastPrice === price ? history : [...history, { price, at: now }].slice(-24);
+  return lastPrice === price ? history : [...history, { price, at: now, source }];
 }
 
 // Updates only offers that the administrator already saved. It never discovers new
@@ -548,7 +807,7 @@ async function refreshSavedMercadoLivreOffers() {
         discountPct,
         freeShipping: Boolean(item.shipping?.free_shipping),
         available: item.status === 'active' && item.available_quantity !== 0,
-        priceHistory: appendPriceHistory(offer, currentPrice, now),
+        priceHistory: appendPriceHistory(offer, currentPrice, now, 'monitoramento'),
         updatedAt: now,
       };
       const didChange = nextOffer.currentPrice !== offer.currentPrice || nextOffer.originalPrice !== offer.originalPrice
@@ -564,7 +823,7 @@ async function refreshSavedMercadoLivreOffers() {
     }
   }
   if (changed) {
-    if (supabaseStore.enabled) await Promise.all(savedOffers.map((offer) => saveOffer(offer)));
+    if (supabaseStore.enabled) await Promise.all(savedOffers.map((offer) => saveOffer(offer, 'monitoramento')));
     else writeOffers(savedOffers);
   }
   return report;
@@ -598,8 +857,58 @@ function contentType(file) {
   return ({ '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml' })[path.extname(file).toLowerCase()] || 'application/octet-stream';
 }
 
-function sendStatic(response, pathname) {
-  const requested = pathname === '/' ? '/index.html' : decodeURIComponent(pathname);
+function absolutePublicUrl(value, origin) {
+  const raw = String(value || '').trim();
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `${origin}/${raw.replace(/^\/+/, '')}`;
+}
+
+function injectSeoMetadata(html, metadata) {
+  const safeTitle = escapeHtml(metadata.title);
+  const safeDescription = escapeHtml(metadata.description);
+  const safeUrl = escapeHtml(metadata.url);
+  const safeImage = escapeHtml(metadata.image);
+  const tags = `<meta name="description" content="${safeDescription}"><link rel="canonical" href="${safeUrl}"><meta property="og:site_name" content="Economizaí"><meta property="og:type" content="product"><meta property="og:title" content="${safeTitle}"><meta property="og:description" content="${safeDescription}"><meta property="og:url" content="${safeUrl}"><meta property="og:image" content="${safeImage}"><meta property="og:image:alt" content="${safeTitle}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeTitle}"><meta name="twitter:description" content="${safeDescription}"><meta name="twitter:image" content="${safeImage}"><script type="application/ld+json">${JSON.stringify(metadata.schema).replace(/</g, '\\u003c')}</script>`;
+  const withoutOldDescription = html.replace(/<meta\s+name=["']description["'][^>]*>/ig, '');
+  const withTitle = withoutOldDescription.replace(/<title>[^<]*<\/title>/i, `<title>${safeTitle}</title>`);
+  return withTitle.replace(/<\/head\s*>/i, `${tags}</head>`);
+}
+
+async function getProductSeoMetadata(requested, searchParams, origin) {
+  const legacyOfferIds = { '/produto.html': 'oferta-redragon', '/produto-lencos.html': 'oferta-lencos', '/produto-microfone.html': 'oferta-microfone' };
+  const offerId = requested === '/produto-dinamico.html' ? searchParams?.get('id') : legacyOfferIds[requested];
+  if (!offerId) return null;
+  const offer = (await getAllOffers()).find((item) => String(item.id) === String(offerId));
+  if (!offer) return null;
+  const url = requested === '/produto-dinamico.html'
+    ? `${origin}/produto-dinamico.html?id=${encodeURIComponent(offer.id)}`
+    : `${origin}${requested}`;
+  const description = String(offer.description || offer.reviewSummary || `Confira preço, desconto e detalhes de ${offer.title} no Economizaí.`).replace(/\s+/g, ' ').trim().slice(0, 200);
+  const image = absolutePublicUrl(offer.image || 'assets/logo-economizai.png', origin);
+  const rating = Number(String(offer.rating || '').replace(',', '.'));
+  const reviewCount = Number(String(offer.reviewCount || '').replace(/\D/g, ''));
+  const schema = {
+    '@context': 'https://schema.org', '@type': 'Product', name: offer.title, description, image: [image],
+    offers: { '@type': 'Offer', url, priceCurrency: offer.currency || 'BRL', price: Number(offer.currentPrice).toFixed(2), availability: offer.available === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock' },
+  };
+  if (Number.isFinite(rating) && rating > 0 && Number.isFinite(reviewCount) && reviewCount > 0) schema.aggregateRating = { '@type': 'AggregateRating', ratingValue: rating, reviewCount };
+  return { title: `${offer.title} | Economizaí`, description, image, url, schema };
+}
+
+function escapeXml(value) {
+  return String(value || '').replace(/[<>&'\"]/g, (character) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[character]);
+}
+
+async function createSitemap(origin) {
+  const staticPaths = ['/', '/lojas.html', '/sobre.html', '/como-encontramos-ofertas.html', '/transparencia.html', '/contato.html', '/privacidade.html', '/termos.html'];
+  const offers = (await getAllOffers()).filter((offer) => offer.availabilityStatus !== 'pending' && offer.available !== false);
+  const urls = [...staticPaths.map((pathName) => `${origin}${pathName}`), ...offers.map((offer) => `${origin}/produto-dinamico.html?id=${encodeURIComponent(offer.id)}`)];
+  return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map((loc) => `<url><loc>${escapeXml(loc)}</loc></url>`).join('')}</urlset>`;
+}
+
+async function sendStatic(response, pathname, searchParams, origin) {
+  const rawRequested = pathname === '/' ? '/index.html' : decodeURIComponent(pathname);
+  const requested = legacyAssetPaths[rawRequested] || rawRequested;
   const file = path.resolve(siteDirectory, `.${requested}`);
   if (!file.startsWith(siteDirectory + path.sep) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return false;
   const type = contentType(file);
@@ -608,6 +917,8 @@ function sendStatic(response, pathname) {
   // futuras, mesmo se alguém esquecer de incluir o script manualmente.
   if (type.startsWith('text/html')) {
     let html = body.toString('utf8');
+    const seoMetadata = await getProductSeoMetadata(requested, searchParams, origin);
+    if (seoMetadata) html = injectSeoMetadata(html, seoMetadata);
     if (!/<link\s[^>]*rel=["'](?:shortcut\s+)?icon["']/i.test(html)) {
       html = html.replace(/<\/head\s*>/i, '<link rel="icon" type="image/png" href="assets/logo-economizai.png"></head>');
     }
@@ -619,6 +930,12 @@ function sendStatic(response, pathname) {
     }
     if (!/\bui-feedback\.css\b/.test(html)) {
       html = html.replace(/<\/head\s*>/i, '<link rel="stylesheet" href="ui-feedback.css"></head>');
+    }
+    if (!/\bshare-tools\.css\b/.test(html)) {
+      html = html.replace(/<\/head\s*>/i, '<link rel="stylesheet" href="share-tools.css"></head>');
+    }
+    if (!/\bshare-tools-mobile\.css\b/.test(html)) {
+      html = html.replace(/<\/head\s*>/i, '<link rel="stylesheet" href="share-tools-mobile.css"></head>');
     }
     // A renovação visual especial permanece apenas na página de login.
     if (requested === '/login.html' && !/\bdesign-polish\.css\b/.test(html)) {
@@ -632,6 +949,17 @@ function sendStatic(response, pathname) {
     if (requested !== '/index.html' && !/\bpage-shell\.js\b/.test(html)) html = html.replace(/<\/body\s*>/i, '<script src="page-shell.js"></script></body>');
     if (!/\bpassword-visibility\.js\b/.test(html)) html = html.replace(/<\/body\s*>/i, '<script src="password-visibility.js"></script></body>');
     if (!/\bui-feedback\.js\b/.test(html)) html = html.replace(/<\/body\s*>/i, '<script src="ui-feedback.js"></script></body>');
+    if (!/\bshare-tools\.js\b/.test(html)) html = html.replace(/<\/body\s*>/i, '<script src="share-tools.js"></script></body>');
+    const privateOrAdminPage = /^\/(?:admin(?:-cards|-users)?|reportes|analytics|login|conta)\.html$/i.test(requested);
+    if (!privateOrAdminPage && !/\banalytics\.js\b/.test(html)) html = html.replace(/<\/body\s*>/i, '<script src="analytics.js"></script></body>');
+    const legacyOfferAnalytics = {
+      '/produto-lencos.html': { id: 'oferta-lencos', category: 'bebes' },
+      '/produto-microfone.html': { id: 'oferta-microfone', category: 'perifericos' },
+    }[requested];
+    if (legacyOfferAnalytics) {
+      const { id, category } = legacyOfferAnalytics;
+      html = html.replace(/<\/body\s*>/i, `<script>window.EconomizaiAnalytics?.track('offer_view',{offerId:'${id}',category:'${category}'});document.querySelector('.buy')?.addEventListener('click',()=>window.EconomizaiAnalytics?.track('affiliate_click',{offerId:'${id}',category:'${category}'}));</script></body>`);
+    }
     body = Buffer.from(html, 'utf8');
   }
   send(response, 200, body, type);
@@ -640,6 +968,9 @@ function sendStatic(response, pathname) {
 
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host}`);
+  if (request.method === 'GET' && url.pathname === '/assets/logo-economizai-completo.png') {
+    return send(response, 200, getFullLogoBuffer(), 'image/png');
+  }
   try {
     await databaseReady;
     if (request.method === 'POST' && url.pathname === '/api/auth/login') {
@@ -664,6 +995,20 @@ const server = http.createServer(async (request, response) => {
       });
     }
 
+    if (request.method === 'POST' && url.pathname === '/api/auth/recover') {
+      const { email } = await readBody(request);
+      if (!String(email || '').trim()) return sendJson(response, 400, { message: 'Informe o e-mail da sua conta.' });
+      await sendPasswordRecoveryEmail(request, email);
+      // A resposta não confirma se o endereço existe, evitando expor contas cadastradas.
+      return sendJson(response, 200, { ok: true, message: 'Se este e-mail estiver cadastrado, você receberá em breve um link para redefinir sua senha.' });
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/auth/recover/update') {
+      const { accessToken, password } = await readBody(request);
+      await updatePasswordFromRecovery(accessToken, password);
+      return sendJson(response, 200, { ok: true, message: 'Senha alterada com sucesso.' });
+    }
+
     if (request.method === 'POST' && url.pathname === '/api/auth/logout') {
       return sendJson(response, 200, { ok: true }, { 'Set-Cookie': 'economizai_admin_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0' });
     }
@@ -671,7 +1016,7 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'GET' && url.pathname === '/api/auth/session') {
       const authentication = await requireUser(request);
       if (!authentication.ok) return sendJson(response, authentication.status, { message: authentication.message });
-      return sendJson(response, 200, { authenticated: true, ...authentication.user, isAdmin: Boolean(adminEmail && authentication.user.email.toLowerCase() === adminEmail) });
+      return sendJson(response, 200, { authenticated: true, ...authentication.user, isAdmin: isAdministrator(authentication.user) });
     }
 
     if (request.method === 'GET' && url.pathname === '/api/favorites') {
@@ -753,17 +1098,19 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'PATCH' && url.pathname === '/api/auth/profile') {
       const authentication = await requireUser(request);
       if (!authentication.ok) return sendJson(response, authentication.status, { message: authentication.message });
-      const { name, displayName, avatarId, useCustomAvatar } = await readBody(request);
+      const { name, displayName, avatarId, useCustomAvatar, phone } = await readBody(request);
       const nextAvatarId = /^avatar-[1-6]$/.test(String(avatarId || '')) ? String(avatarId) : authentication.user.avatarId;
       const nextName = String(name || '').trim().slice(0, 80);
       const updatedName = String(displayName || '').trim().slice(0, 80);
+      const nextPhone = String(phone || '').replace(/[^0-9+]/g, '').slice(0, 16);
+      if (nextPhone && !/^\+?[0-9]{10,15}$/.test(nextPhone)) return sendJson(response, 400, { message: 'Informe um telefone válido com DDD.' });
       const profileResponse = await fetch(`${String(config.SUPABASE_URL).replace(/\/$/, '')}/auth/v1/user`, {
         method: 'PUT',
         headers: { apikey: config.SUPABASE_SECRET_KEY, Authorization: `Bearer ${authentication.token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ data: { full_name: nextName, display_name: updatedName, avatar_id: nextAvatarId, avatar_url: useCustomAvatar ? authentication.user.avatarUrl : null } }),
+        body: JSON.stringify({ data: { full_name: nextName, display_name: updatedName, avatar_id: nextAvatarId, avatar_url: useCustomAvatar ? authentication.user.avatarUrl : null, phone: nextPhone || null } }),
       });
       if (!profileResponse.ok) return sendJson(response, 400, { message: 'Não foi possível atualizar o perfil.' });
-      return sendJson(response, 200, { ok: true, name: nextName, displayName: updatedName, avatarId: nextAvatarId });
+      return sendJson(response, 200, { ok: true, name: nextName, displayName: updatedName, avatarId: nextAvatarId, phone: nextPhone });
     }
 
     if (request.method === 'PATCH' && url.pathname === '/api/auth/email') {
@@ -823,12 +1170,20 @@ const server = http.createServer(async (request, response) => {
       return sendJson(response, 200, { ok: true, avatarUrl });
     }
 
-    if (request.method === 'GET' && ['/admin.html', '/reportes.html'].includes(url.pathname)) {
+    if (request.method === 'GET' && ['/admin.html', '/admin-cards.html', '/reportes.html', '/analytics.html', '/admin-users.html'].includes(url.pathname)) {
       const authentication = await requireAdmin(request);
       if (!authentication.ok) {
         response.writeHead(302, { Location: '/login.html', 'Cache-Control': 'no-store' });
         return response.end();
       }
+    }
+
+    // A visão geral é a porta de entrada do administrador. O cadastro continua
+    // disponível explicitamente para os atalhos de nova oferta e edição.
+    if (request.method === 'GET' && url.pathname === '/admin.html'
+      && url.searchParams.get('cadastro') !== '1' && !url.searchParams.has('editar')) {
+      response.writeHead(302, { Location: '/analytics.html', 'Cache-Control': 'no-store' });
+      return response.end();
     }
 
     if (request.method === 'GET' && url.pathname === '/conta.html') {
@@ -839,11 +1194,25 @@ const server = http.createServer(async (request, response) => {
       }
     }
 
+    let adminAuthentication;
     if (url.pathname.startsWith('/api/admin/')) {
-      const authentication = await requireAdmin(request);
-      if (!authentication.ok) return sendJson(response, authentication.status, { message: authentication.message });
+      adminAuthentication = await requireAdmin(request);
+      if (!adminAuthentication.ok) return sendJson(response, adminAuthentication.status, { message: adminAuthentication.message });
     }
     if (databaseStartupError && url.pathname.startsWith('/api/')) return sendJson(response, 503, { message: 'Não foi possível conectar ao banco Supabase. Confira SUPABASE_URL e SUPABASE_SECRET_KEY no arquivo .env.' });
+    if (request.method === 'POST' && url.pathname === '/api/analytics/event') {
+      const body = await readBody(request);
+      const eventType = normalizeAnalyticsValue(body.eventType, 30);
+      const sessionId = normalizeAnalyticsValue(body.sessionId, 90);
+      const pagePath = normalizeAnalyticsValue(body.pagePath, 180);
+      const offerId = normalizeAnalyticsValue(body.offerId, 120) || null;
+      const category = normalizeAnalyticsValue(body.category, 70).toLowerCase().replace(/[^a-z0-9-]/g, '') || null;
+      if (!['page_view', 'offer_view', 'affiliate_click', 'category_view'].includes(eventType) || sessionId.length < 8 || !pagePath.startsWith('/')) {
+        return sendJson(response, 400, { message: 'Evento de análise inválido.' });
+      }
+      await supabaseRest('site_events', { method: 'POST', prefer: 'return=minimal', body: [{ event_type: eventType, session_id: sessionId, page_path: pagePath, offer_external_id: offerId, category_slug: category }] });
+      return sendJson(response, 201, { ok: true });
+    }
     if (request.method === 'GET' && url.pathname === '/api/ofertas') return sendJson(response, 200, (await getAllOffers()).filter((offer) => offer.availabilityStatus !== 'pending'));
 
     const publicOfferMatch = url.pathname.match(/^\/api\/ofertas\/([^/]+)$/);
@@ -854,6 +1223,31 @@ const server = http.createServer(async (request, response) => {
     }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/ofertas') return sendJson(response, 200, await getAllOffers());
+
+    if (request.method === 'GET' && url.pathname === '/api/admin/usuarios') {
+      const users = await listAuthUsers();
+      return sendJson(response, 200, { users: users.map(publicAdminUser) });
+    }
+
+    const adminUserMatch = url.pathname.match(/^\/api\/admin\/usuarios\/([0-9a-f-]+)$/i);
+    if (request.method === 'PATCH' && adminUserMatch) {
+      if (adminUserMatch[1] === adminAuthentication?.user?.id) return sendJson(response, 400, { message: 'Para evitar perda acidental de acesso, um administrador não pode alterar a própria permissão.' });
+      const body = await readBody(request);
+      const user = await updateUserRole(adminUserMatch[1], body.role, adminAuthentication.user);
+      return sendJson(response, 200, { ok: true, user });
+    }
+
+    const adminUserModerationMatch = url.pathname.match(/^\/api\/admin\/usuarios\/([0-9a-f-]+)\/moderacao$/i);
+    if (request.method === 'POST' && adminUserModerationMatch) {
+      if (adminUserModerationMatch[1] === adminAuthentication?.user?.id) return sendJson(response, 400, { message: 'Para evitar bloqueio acidental, um administrador não pode moderar a própria conta.' });
+      const body = await readBody(request);
+      const result = await manageUserAccount(adminUserModerationMatch[1], String(body.action || ''), body.note, adminAuthentication.user);
+      return sendJson(response, 200, { ok: true, ...result });
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/admin/analytics') {
+      return sendJson(response, 200, await getAnalytics(url.searchParams.get('days')));
+    }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/reportes') {
       const reports = await supabaseRest('offer_reports?select=id,report_type,message,status,created_at,offers(external_product_id,products(title))&order=created_at.desc');
@@ -924,7 +1318,7 @@ const server = http.createServer(async (request, response) => {
       oauthAttempt = undefined;
       if (!tokenResponse.ok) throw new MercadoLivreError(tokens.message || tokens.error_description || 'Não foi possível trocar o código por um token.', tokenResponse.status);
       saveTokens(tokens);
-      return send(response, 200, `<!doctype html><meta charset="utf-8"><title>Conexão concluída</title><style>body{margin:0;background:#0b0b0c;color:#eee;font:16px system-ui;padding:48px}h1{color:#ffc42d}a{color:#ffc42d}</style><h1>Nova autorização concluída</h1><p>O token foi salvo somente neste computador. Você já pode voltar ao <a href="/admin.html">painel</a> e testar a adição automática.</p>`, 'text/html; charset=utf-8');
+      return send(response, 200, `<!doctype html><meta charset="utf-8"><title>Conexão concluída</title><style>body{margin:0;background:#0b0b0c;color:#eee;font:16px system-ui;padding:48px}h1{color:#ffc42d}a{color:#ffc42d}</style><h1>Nova autorização concluída</h1><p>O token foi salvo somente neste computador. Você já pode voltar ao <a href="/analytics.html">painel</a> e testar a adição automática.</p>`, 'text/html; charset=utf-8');
     }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/status') {
@@ -978,7 +1372,7 @@ const server = http.createServer(async (request, response) => {
       const lastPrice = previousHistory.at(-1)?.price;
       const priceHistory = lastPrice === editedOffer.currentPrice
         ? previousHistory
-        : [...previousHistory, { price: editedOffer.currentPrice, at: new Date().toISOString() }].slice(-24);
+        : [...previousHistory, { price: editedOffer.currentPrice, at: new Date().toISOString(), source: 'painel' }];
       const finalOffer = { ...editedOffer, id: existingOffer.id, createdAt: existingOffer.createdAt, updatedAt: new Date().toISOString(), priceHistory };
       return sendJson(response, 200, await saveOffer(finalOffer));
     }
@@ -997,8 +1391,15 @@ const server = http.createServer(async (request, response) => {
       return sendJson(response, 200, { ok: true, deleted: 1 });
     }
 
+    if (request.method === 'GET' && url.pathname === '/robots.txt') {
+      const origin = publicSiteOrigin(request);
+      return send(response, 200, `User-agent: *\nAllow: /\nDisallow: /admin.html\nDisallow: /admin-cards.html\nDisallow: /admin-users.html\nDisallow: /analytics.html\nDisallow: /reportes.html\nDisallow: /conta.html\nDisallow: /login.html\n\nSitemap: ${origin}/sitemap.xml\n`, 'text/plain; charset=utf-8');
+    }
+    if (request.method === 'GET' && url.pathname === '/sitemap.xml') {
+      return send(response, 200, await createSitemap(publicSiteOrigin(request)), 'application/xml; charset=utf-8');
+    }
     if (url.pathname.startsWith('/api/')) return sendJson(response, 404, { message: 'Rota não encontrada.' });
-    if (sendStatic(response, url.pathname)) return;
+    if (await sendStatic(response, url.pathname, url.searchParams, publicSiteOrigin(request))) return;
     return send(response, 404, 'Não encontrado', 'text/plain; charset=utf-8');
   } catch (error) {
     if (error instanceof MercadoLivreError) console.warn(`Mercado Livre [${error.status}]: ${error.message}`);

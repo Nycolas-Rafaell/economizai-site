@@ -1,0 +1,126 @@
+/* Cards do catálogo administrativo: mesma leitura visual das ofertas públicas. */
+.cards-page .list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.admin-offer-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #303030;
+  border-radius: 16px;
+  background: #171717;
+  box-shadow: 0 8px 24px #0003;
+}
+
+.admin-offer-card.status-available { border-color: #278c58; }
+.admin-offer-card.status-unavailable { border-color: #a73f3a; }
+.admin-offer-card.status-pending { border-color: #9b7617; }
+
+.admin-card-media {
+  position: relative;
+  display: grid;
+  height: 190px;
+  overflow: hidden;
+  place-items: center;
+  background: #fff;
+}
+
+.admin-card-media img {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+  object-fit: contain;
+}
+
+.admin-card-media .no-image { color: #666; font-size: 13px; font-weight: 700; }
+
+.admin-offer-card .store-badge,
+.admin-offer-card .offer-status {
+  position: absolute;
+  top: 11px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.admin-offer-card .store-badge { left: 11px; background: #3c3c3c; color: #fff; }
+.admin-offer-card .offer-status { right: 11px; border: 1px solid #555; background: #171717; }
+.admin-offer-card.status-available .offer-status { border-color: #278c58; color: #85e9af; }
+.admin-offer-card.status-unavailable .offer-status { border-color: #a73f3a; color: #ffaba5; }
+.admin-offer-card.status-pending .offer-status { border-color: #9b7617; color: #ffdb70; }
+
+.admin-card-body {
+  display: flex;
+  min-height: 250px;
+  flex: 1;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.admin-card-category {
+  margin: 0 0 8px;
+  color: #aaa;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.admin-card-title {
+  display: -webkit-box;
+  min-height: 49px;
+  overflow: hidden;
+  color: #f8f8f8;
+  font: 800 16px/1.35 Sora, Inter, system-ui;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.admin-card-rating { min-height: 22px; margin: 11px 0 9px; color: #aaa; font-size: 12px; }
+.admin-card-rating .star { color: #ffc42d; font-size: 16px; vertical-align: -1px; }
+.admin-card-rating strong { color: #eee; }
+.admin-price-old { min-height: 19px; color: #969696; font-size: 12px; text-decoration: line-through; }
+
+.admin-price-current { display: flex; align-items: baseline; flex-wrap: wrap; gap: 7px; margin-top: 2px; }
+.admin-price-current small { color: #ffc42d; font-weight: 800; text-transform: uppercase; }
+.admin-price-current strong { color: #ffc42d; font: 800 25px/1 Sora, Inter, system-ui; }
+.admin-discount { padding: 5px 7px; border-radius: 6px; background: #23bd66; color: #07170d; font-size: 12px; font-weight: 900; white-space: nowrap; }
+
+.admin-offer-card .card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: auto; padding-top: 16px; }
+.admin-offer-card .card-actions a,
+.admin-offer-card .card-actions button {
+  display: grid;
+  min-height: 42px;
+  place-items: center;
+  border: 1px solid #705817;
+  border-radius: 9px;
+  background: #28220f;
+  color: #ffd15a;
+  text-decoration: none;
+  font: 800 13px Inter, system-ui;
+  cursor: pointer;
+}
+
+.admin-offer-card .card-actions a:hover { border-color: #ffc42d; background: #342a0f; }
+.admin-offer-card .card-actions .delete { border-color: #8e3d39; background: #241717; color: #ff9c96; }
+.admin-offer-card .card-actions .delete:hover { border-color: #ef5a50; background: #3a1e1c; }
+
+@media (max-width: 960px) {
+  .cards-page .list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .cards-page .list { grid-template-columns: 1fr; gap: 14px; }
+  .admin-card-media { height: 210px; }
+  .admin-card-body { min-height: 0; }
+  .admin-card-title { min-height: 0; }
+}

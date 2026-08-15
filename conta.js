@@ -6,7 +6,7 @@ let selectedAvatarId = 'avatar-1';
 let session = null;
 
 async function readJson(response) { const text = await response.text(); try { return JSON.parse(text); } catch { return {}; } }
-function notify(message, error = false) { status.style.color = error ? '#ffb0b0' : '#86e9b2'; status.textContent = message; }
+function notify(message, error = false) { status.className = `status${error ? ' error' : ''}`; status.textContent = message; }
 function avatarSource() { return session?.avatarUrl || `assets/avatars/${selectedAvatarId}.png`; }
 function clearInputs(...ids) { ids.forEach((id) => { document.getElementById(id).value = ''; }); }
 function renderAvatars() {
@@ -28,6 +28,7 @@ async function loadProfile() {
   document.getElementById('accountEmail').value = session.email;
   document.getElementById('name').value = session.name || '';
   document.getElementById('displayName').value = session.displayName || '';
+  document.getElementById('phone').value = session.phone || '';
   selectedAvatarId = session.avatarId || 'avatar-1';
   avatarPreview.src = avatarSource();
   document.getElementById('adminLink').hidden = !session.isAdmin;
@@ -36,7 +37,7 @@ async function loadProfile() {
 
 document.getElementById('profileForm').addEventListener('submit', async (event) => {
   event.preventDefault(); notify('Salvando…');
-  const response = await fetch('/api/auth/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('name').value, displayName: document.getElementById('displayName').value, avatarId: selectedAvatarId, useCustomAvatar: Boolean(session.avatarUrl) }) });
+  const response = await fetch('/api/auth/profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('name').value, displayName: document.getElementById('displayName').value, phone: document.getElementById('phone').value, avatarId: selectedAvatarId, useCustomAvatar: Boolean(session.avatarUrl) }) });
   const result = await readJson(response);
   if (!response.ok) return notify(result.message || 'Não foi possível salvar.', true);
   session = { ...session, ...result, avatarId: result.avatarId, avatarUrl: session.avatarUrl };

@@ -1,0 +1,37 @@
+/* Compartilhamento: folha inferior segura e confortável em telas menores. */
+@media (max-width: 600px) {
+  .share-menu {
+    position: fixed;
+    z-index: 120;
+    top: auto;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: 12px;
+    width: auto;
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+    padding: 18px;
+    border-radius: 16px;
+    box-shadow: 0 22px 60px #000d;
+  }
+
+  .share-menu h2 {
+    margin-bottom: 6px;
+    font-size: 16px;
+  }
+
+  .share-menu p,
+  .economizai-share-feedback {
+    font-size: 12px;
+  }
+
+  .economizai-share-actions {
+    gap: 9px;
+  }
+
+  .economizai-share-actions button {
+    min-height: 46px;
+    padding: 10px;
+    font-size: 12px;
+  }
+}

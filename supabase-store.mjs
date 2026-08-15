@@ -62,7 +62,7 @@ export function createSupabaseOfferStore(config) {
   }
 
   async function readLastHistory(offerId) {
-    const rows = await request(`price_history?select=price,recorded_at&offer_id=eq.${encodeURIComponent(offerId)}&order=recorded_at.desc&limit=1`);
+    const rows = await request(`price_history?select=price,original_price,recorded_at,source&offer_id=eq.${encodeURIComponent(offerId)}&order=recorded_at.desc&limit=1`);
     return rows?.[0] || null;
   }
 
@@ -142,7 +142,7 @@ export function createSupabaseOfferStore(config) {
           price: Number(item.price),
           original_price: offer.originalPrice == null ? null : Number(offer.originalPrice),
           recorded_at: item.at || new Date().toISOString(),
-          source: 'migracao-local',
+          source: item.source || 'migracao-local',
         })),
       });
     } else {
@@ -151,7 +151,7 @@ export function createSupabaseOfferStore(config) {
       if (!lastHistory || Number(lastHistory.price) !== Number(latest.price)) {
         await request('price_history', {
           method: 'POST', prefer: 'return=minimal',
-          body: [{ offer_id: savedOffer.id, price: Number(latest.price), original_price: offer.originalPrice == null ? null : Number(offer.originalPrice), recorded_at: latest.at || new Date().toISOString(), source: 'painel' }],
+          body: [{ offer_id: savedOffer.id, price: Number(latest.price), original_price: offer.originalPrice == null ? null : Number(offer.originalPrice), recorded_at: latest.at || new Date().toISOString(), source: latest.source || 'painel' }],
         });
       }
     }
@@ -221,7 +221,7 @@ export function createSupabaseOfferStore(config) {
         availabilityStatus,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
-        priceHistory: (historyByOfferId.get(item.id) || []).map((history) => ({ price: Number(history.price), at: history.recorded_at })),
+        priceHistory: (historyByOfferId.get(item.id) || []).map((history) => ({ price: Number(history.price), originalPrice: history.original_price == null ? null : Number(history.original_price), at: history.recorded_at, source: history.source || 'painel' })),
       };
     });
   }

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Análises do site | Economizaí</title>
+  <link rel="stylesheet" href="institutional.css"><link rel="stylesheet" href="admin-ui.css"><link rel="stylesheet" href="analytics.css">
+</head>
+<body>
+  <main class="analytics-page admin-page">
+    <header class="admin-topbar"><div><p class="admin-kicker">Economizaí · inteligência do site</p><h1>Análises</h1><p class="lead">Acompanhe a navegação e descubra quais ofertas despertam mais interesse.</p></div><span class="admin-status">Visão geral</span></header>
+    <nav class="admin-nav" aria-label="Atalhos do painel"><a href="admin.html?cadastro=1#cadastro"><b>＋</b> Nova oferta</a><a href="admin-cards.html"><b>▦</b> Cards cadastrados</a><a href="reportes.html"><b>✦</b> Atendimento</a><a href="admin-users.html"><b>♙</b> Usuários</a><a href="index.html"><b>↗</b> Ver site</a></nav>
+    <section class="analytics-toolbar"><div><strong>Período analisado</strong><p>Os números começam a ser registrados a partir de agora.</p></div><select id="period" aria-label="Período"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></section>
+    <p class="analytics-status" id="status">Carregando dados…</p>
+    <section class="analytics-metrics" aria-label="Indicadores principais">
+      <article><small>Acessos ao site</small><strong id="pageViews">—</strong><span>páginas visualizadas</span></article>
+      <article><small>Visitantes únicos</small><strong id="visitors">—</strong><span>sessões no período</span></article>
+      <article><small>Ofertas abertas</small><strong id="offerViews">—</strong><span>páginas de produto</span></article>
+      <article><small>Cliques nas lojas</small><strong id="affiliateClicks">—</strong><span id="interestRate">— de interesse</span></article>
+    </section>
+    <section class="analytics-grid">
+      <article class="analytics-panel wide"><div class="analytics-panel-head"><div><h2>Acessos por dia</h2><p>Visualizações de páginas no período selecionado.</p></div></div><div class="line-chart" id="dailyChart" aria-label="Gráfico de acessos por dia"></div></article>
+      <article class="analytics-panel"><h2>Ofertas mais acessadas</h2><p class="panel-hint">Aberturas da página do produto.</p><ol class="rank-list" id="topOffers"></ol></article>
+      <article class="analytics-panel"><h2>Categorias mais acessadas</h2><p class="panel-hint">Navegação por categoria e visualizações de produtos.</p><ol class="rank-list" id="topCategories"></ol></article>
+      <article class="analytics-panel"><h2>Origem do interesse</h2><p class="panel-hint">Cliques que levam o visitante para uma loja parceira.</p><div class="bar-list" id="marketplaces"></div></article>
+      <article class="analytics-panel"><h2>Resumo do catálogo</h2><p class="panel-hint">Situação atual dos cards publicados.</p><div class="catalog-summary" id="catalogSummary"></div></article>
+    </section>
+  </main>
+  <script src="analytics-admin.js"></script>
+</body>
+</html>

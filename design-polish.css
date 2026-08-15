@@ -41,7 +41,10 @@ body:has(.login)::before { content: ''; position: fixed; inset: 18px; pointer-ev
 .login .back { margin-top: 23px; font-size: 13px; color: #eac25d; }
 .login .back:hover { color: var(--ui-yellow); }
 .login .password-guidance { border-color: rgba(255,196,45,.20); background: rgba(255,196,45,.045); }
-.login .status:not(:empty) { padding: 11px 12px; border: 1px solid rgba(255,176,176,.18); border-radius: 9px; background: rgba(255,90,90,.06); font-size: 13px; }
+.login .status:not(:empty) { padding: 11px 12px; border-radius: 9px; font-size: 13px; }
+.login .status.info { border-color: #4b4b4b; background: #1d1d1d; color: #c9c9c9; }
+.login .status.success { border-color: #2d714c; background: #13251a; color: #91e5b0; }
+.login .status.error { border-color: #6d3d3a; background: #251a1a; color: #ffb0b0; }
 
 /* Páginas de conta, favoritos e painel. */
 .account .panel, .page .panel { border-color: rgba(255,255,255,.13); background: linear-gradient(145deg, #1a1a1a, #151515); }

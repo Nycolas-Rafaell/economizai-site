@@ -264,7 +264,7 @@
     <div class="product-top">
       <div class="product-media">
         <span class="store-chip">Vendido via Mercado Livre</span>
-        <img src="redragon-h510-pro.png" alt="Headset sem fio Redragon H510-PRO preto">
+        <img src="assets/products/redragon-h510-pro.png" alt="Headset sem fio Redragon H510-PRO preto">
       </div>
 
       <div class="product-right">
@@ -283,17 +283,7 @@
           <div class="action-row">
             <!-- Em produção: este href já vem pronto do banco, com o link de afiliado (Shopee/ML) aplicado pelo backend -->
             <a class="cta-buy" id="ctaBuy" href="#" target="_blank" rel="noopener">Ver oferta no Mercado Livre →</a>
-            <button class="btn-share" id="btnShare" title="Compartilhar oferta">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="18" cy="5" r="3"></circle>
-                <circle cx="6" cy="12" r="3"></circle>
-                <circle cx="18" cy="19" r="3"></circle>
-                <line x1="8.6" y1="10.6" x2="15.4" y2="6.4"></line>
-                <line x1="8.6" y1="13.4" x2="15.4" y2="17.6"></line>
-              </svg>
-            </button>
           </div>
-          <div class="share-toast" id="shareToast">Link copiado — já com seu ID de afiliado!</div>
           <div class="trust-note">Preço monitorado automaticamente pelo Economizaí. Ao comprar pelo nosso link, você apoia o canal ReiWO sem pagar nada a mais.</div>
         </div>
       </div>
@@ -367,27 +357,13 @@
 
   <footer class="site-footer"><div class="footer-grid"><div><div class="footer-brand">ECONOMIZAÍ<small>Um projeto ReiWO.</small></div></div><div class="footer-col"><h2>NAVEGAÇÃO</h2><a href="index.html">Início e ofertas</a><a href="sobre.html">Sobre o Economizaí</a><a href="contato.html">Contato</a></div><div class="footer-col"><h2>INSTITUCIONAL</h2><a href="como-encontramos-ofertas.html">Como encontramos as ofertas</a><a href="transparencia.html">Transparência</a><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de Uso</a><a href="cookies.html">Cookies</a></div><div class="footer-col"><h2>REIWO</h2><a href="https://www.youtube.com/@reiwo" target="_blank" rel="noopener">YouTube</a><a href="https://www.instagram.com/reiwooficial/" target="_blank" rel="noopener">Instagram</a><a href="https://www.twitch.tv/reiwooficial" target="_blank" rel="noopener">Twitch</a><a href="https://www.tiktok.com/@reiwooficial_" target="_blank" rel="noopener">TikTok</a></div></div><p class="affiliate-note">O Economizaí pode receber comissão por meio de determinados links de afiliados. Isso não gera custo adicional para você. Preços e condições podem ser alterados pelas lojas sem aviso prévio.</p><p class="copyright">© 2026 Economizaí. Todos os direitos reservados.</p></footer>
 
+  <script src="analytics.js"></script>
   <script>
     const AFFILIATE_LINK = "https://meli.la/2FwH9gX";
     document.getElementById('ctaBuy').href = AFFILIATE_LINK;
+    window.EconomizaiAnalytics?.track('offer_view', { offerId: 'oferta-redragon', category: 'perifericos' });
+    document.getElementById('ctaBuy').addEventListener('click', () => window.EconomizaiAnalytics?.track('affiliate_click', { offerId: 'oferta-redragon', category: 'perifericos' }));
 
-    document.getElementById('btnShare').addEventListener('click', async () => {
-      const shareData = {
-        title: document.title,
-        text: "Olha essa oferta que encontrei no Economizaí:",
-        url: AFFILIATE_LINK
-      };
-      const toast = document.getElementById('shareToast');
-      try {
-        if (navigator.share) {
-          await navigator.share(shareData);
-        } else {
-          await navigator.clipboard.writeText(AFFILIATE_LINK);
-          toast.classList.add('show');
-          setTimeout(() => toast.classList.remove('show'), 2200);
-        }
-      } catch (e) { /* usuário cancelou o compartilhamento */ }
-    });
   </script>
 
 </body>

@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Capturar para Economizaí",
+  "version": "1.0.0",
+  "description": "Captura dados visíveis de ofertas do Mercado Livre para preencher o rascunho do Economizaí.",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": [
+    "https://*.mercadolivre.com.br/*",
+    "https://*.mercadolibre.com/*",
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*",
+    "https://*.trycloudflare.com/*"
+  ],
+  "action": {
+    "default_title": "Capturar para Economizaí",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/economizai-16.png",
+      "32": "icons/economizai-32.png",
+      "48": "icons/economizai-48.png",
+      "128": "icons/economizai-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/economizai-16.png",
+    "32": "icons/economizai-32.png",
+    "48": "icons/economizai-48.png",
+    "128": "icons/economizai-128.png"
+  },
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://*.mercadolivre.com.br/*", "https://*.mercadolibre.com/*"],
+      "js": ["content-product.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["http://localhost:3000/*", "http://127.0.0.1:3000/*", "https://*.trycloudflare.com/*"],
+      "js": ["content-admin.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

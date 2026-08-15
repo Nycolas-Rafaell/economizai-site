@@ -100,7 +100,11 @@
     width: 68%;
     height: auto;
     margin-bottom: 4px;
+    cursor: pointer;
+    transition: transform .18s ease, filter .18s ease;
   }
+  .hero-logo:hover { transform: translateY(-2px) scale(1.015); filter: brightness(1.06); }
+  .hero-logo:focus-visible { outline: 2px solid var(--yellow); outline-offset: 7px; border-radius: 6px; }
 
   .hero h1 {
     font-family: 'Sora', sans-serif;
@@ -322,9 +326,10 @@
   .price-old-label { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
   .price-old { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-muted); text-decoration: line-through; }
 
-  .price-new-row { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+  .price-new-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 8px; margin-top: 2px; min-width: 0; }
   .price-new-label { font-size: 10.5px; color: var(--yellow); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; }
-  .price-new { font-family: 'JetBrains Mono', monospace; font-size: 23px; font-weight: 700; color: var(--yellow); }
+  .price-new { min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 23px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
+  .price-new-row .discount-flag { flex: 0 0 auto; white-space: nowrap; }
 
   .card-cta {
     margin-top: 2px;
@@ -358,7 +363,10 @@
 
   @media (max-width: 520px) {
     .hero { padding: 50px 20px 32px; }
-    .grid { grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 12px; }
+    .grid { grid-template-columns: 1fr; gap: 14px; }
+    .card-media { height: 210px; flex-basis: 210px; }
+    .card-title { min-height: 0; font-size: 14px; }
+    .price-new { font-size: clamp(21px, 7vw, 25px); }
   }  /* ---------- MENU LATERAL DE CATEGORIAS ---------- */
   .top-nav {
     background: var(--bg-panel);
@@ -384,6 +392,8 @@
     gap: 6px;
   }
   .nav-btn:hover { filter: brightness(1.06); }
+  .nav-top { animation: nav-top-in .18s ease-out; }
+  @keyframes nav-top-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
   .top-nav [hidden], .side-panel [hidden] { display: none !important; }
   .nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
   .nav-account { background: transparent; border: 1px solid var(--yellow); color: var(--yellow); }
@@ -528,9 +538,10 @@
   <div class="top-nav">
     <button class="nav-btn" onclick="abrirPainelCategorias()">☰ Categorias</button>
     <a class="nav-btn nav-contact" href="contato.html">Contato</a>
+    <button class="nav-btn nav-top" id="scrollTopButton" type="button" hidden aria-label="Voltar ao topo da página">↑ Topo</button>
     <div class="nav-right">
       <a class="nav-btn nav-account" id="accountMenuLink" href="login.html">Entrar</a>
-      <a class="nav-btn nav-account" id="adminMenuLink" href="admin.html" hidden>Painel admin</a>
+      <a class="nav-btn nav-account" id="adminMenuLink" href="analytics.html" hidden>Painel admin</a>
       <div class="profile-menu" id="profileMenu" hidden>
         <button class="nav-btn profile-trigger" id="profileMenuButton" type="button" aria-haspopup="true" aria-expanded="false"><img class="nav-avatar" id="navAvatar" alt=""><span id="navUserName"></span>⌄</button>
         <div class="profile-dropdown" id="profileDropdown" hidden><a href="conta.html">Minha conta</a><a href="favoritos.html">Meus favoritos</a><a href="alertas.html">Meus Alertas</a><button id="logoutMenuButton" type="button">Sair</button></div>
@@ -545,30 +556,34 @@
 
     <h4>Categorias</h4>
     <a href="#ofertas" data-category="all">Todas as ofertas</a>
-    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Games</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="games">Ver tudo em Games</a><a class="subcategory-link" href="#ofertas" data-subcategory="Console">Consoles</a><a class="subcategory-link" href="#ofertas" data-subcategory="Jogo">Jogos</a><a class="subcategory-link" href="#ofertas" data-subcategory="Controle">Controles</a></div></div>
-    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Hardware</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="hardware">Ver tudo em Hardware</a><a class="subcategory-link" href="#ofertas" data-subcategory="SSD">SSD e armazenamento</a><a class="subcategory-link" href="#ofertas" data-subcategory="Placa de vídeo">Placas de vídeo</a></div></div>
-    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Informática</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="informatica">Ver tudo em Informática</a><a class="subcategory-link" href="#ofertas" data-subcategory="Notebook">Notebooks</a><a class="subcategory-link" href="#ofertas" data-subcategory="Impressora">Impressoras</a></div></div>
-    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Periféricos</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="perifericos">Ver tudo em Periféricos</a><a class="subcategory-link" href="#ofertas" data-subcategory="Headset">Headsets</a><a class="subcategory-link" href="#ofertas" data-subcategory="Microfone">Microfones</a><a class="subcategory-link" href="#ofertas" data-subcategory="Teclado">Teclados</a><a class="subcategory-link" href="#ofertas" data-subcategory="Mouse">Mouses</a></div></div>
-    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Celulares e Tablets</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="smartphones">Ver tudo em Celulares e Tablets</a><a class="subcategory-link" href="#ofertas" data-subcategory="Smartphone">Celulares</a><a class="subcategory-link" href="#ofertas" data-subcategory="Tablet">Tablets</a></div></div>
-    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">TVs e Áudio</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="tvs-audio">Ver tudo em TVs e Áudio</a><a class="subcategory-link" href="#ofertas" data-subcategory="TV">TVs</a><a class="subcategory-link" href="#ofertas" data-subcategory="Fone de ouvido">Fones de ouvido</a></div></div>
-    <a href="#ofertas" data-category="casa-cozinha">Casa e Cozinha</a>
-    <a href="#ofertas" data-category="bebes">Bebês e Crianças</a>
-    <a href="#ofertas" data-category="saude-beleza">Saúde e Beleza</a>
-    <a href="#ofertas" data-category="ferramentas-auto">Ferramentas e Auto</a>
-    <a href="#ofertas" data-category="moda-acessorios">Moda e Acessórios</a>
-    <a href="#ofertas" data-category="outros">Outros</a>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Games</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="games">Ver tudo em Games</a><a class="subcategory-link" href="#ofertas" data-subcategory="Console">Consoles</a><a class="subcategory-link" href="#ofertas" data-subcategory="Jogo">Jogos</a><a class="subcategory-link" href="#ofertas" data-subcategory="Controle">Controles</a><a class="subcategory-link" href="#ofertas" data-subcategory="Cadeira gamer">Cadeiras gamer</a><a class="subcategory-link" href="#ofertas" data-subcategory="Acessório gamer">Acessórios gamer</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Hardware</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="hardware">Ver tudo em Hardware</a><a class="subcategory-link" href="#ofertas" data-subcategory="SSD">SSD e armazenamento</a><a class="subcategory-link" href="#ofertas" data-subcategory="Memória RAM">Memórias RAM</a><a class="subcategory-link" href="#ofertas" data-subcategory="Placa de vídeo">Placas de vídeo</a><a class="subcategory-link" href="#ofertas" data-subcategory="Processador">Processadores</a><a class="subcategory-link" href="#ofertas" data-subcategory="Placa-mãe">Placas-mãe</a><a class="subcategory-link" href="#ofertas" data-subcategory="Fonte">Fontes</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Informática</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="informatica">Ver tudo em Informática</a><a class="subcategory-link" href="#ofertas" data-subcategory="Notebook">Notebooks</a><a class="subcategory-link" href="#ofertas" data-subcategory="Computador">Computadores</a><a class="subcategory-link" href="#ofertas" data-subcategory="Impressora">Impressoras</a><a class="subcategory-link" href="#ofertas" data-subcategory="Câmera">Câmeras</a><a class="subcategory-link" href="#ofertas" data-subcategory="Rede">Redes e conectividade</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Periféricos</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="perifericos">Ver tudo em Periféricos</a><a class="subcategory-link" href="#ofertas" data-subcategory="Headset">Headsets</a><a class="subcategory-link" href="#ofertas" data-subcategory="Microfone">Microfones</a><a class="subcategory-link" href="#ofertas" data-subcategory="Teclado">Teclados</a><a class="subcategory-link" href="#ofertas" data-subcategory="Mouse">Mouses</a><a class="subcategory-link" href="#ofertas" data-subcategory="Monitor">Monitores</a><a class="subcategory-link" href="#ofertas" data-subcategory="Webcam">Webcams</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Celulares e Tablets</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="smartphones">Ver tudo em Celulares e Tablets</a><a class="subcategory-link" href="#ofertas" data-subcategory="Smartphone">Celulares</a><a class="subcategory-link" href="#ofertas" data-subcategory="Tablet">Tablets</a><a class="subcategory-link" href="#ofertas" data-subcategory="Smartwatch">Smartwatches</a><a class="subcategory-link" href="#ofertas" data-subcategory="Acessório">Capas e acessórios</a><a class="subcategory-link" href="#ofertas" data-subcategory="Carregador">Carregadores</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">TVs e Áudio</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="tvs-audio">Ver tudo em TVs e Áudio</a><a class="subcategory-link" href="#ofertas" data-subcategory="TV">TVs</a><a class="subcategory-link" href="#ofertas" data-subcategory="Fone de ouvido">Fones de ouvido</a><a class="subcategory-link" href="#ofertas" data-subcategory="Caixa de som">Caixas de som</a><a class="subcategory-link" href="#ofertas" data-subcategory="Soundbar">Soundbars</a><a class="subcategory-link" href="#ofertas" data-subcategory="Projetor">Projetores</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Casa e Cozinha</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="casa-cozinha">Ver tudo em Casa e Cozinha</a><a class="subcategory-link" href="#ofertas" data-subcategory="Eletrodoméstico">Eletrodomésticos</a><a class="subcategory-link" href="#ofertas" data-subcategory="Cozinha">Utensílios de cozinha</a><a class="subcategory-link" href="#ofertas" data-subcategory="Limpeza">Limpeza</a><a class="subcategory-link" href="#ofertas" data-subcategory="Organização">Organização</a><a class="subcategory-link" href="#ofertas" data-subcategory="Móveis">Móveis e decoração</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Bebês e Crianças</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="bebes">Ver tudo em Bebês e Crianças</a><a class="subcategory-link" href="#ofertas" data-subcategory="Higiene">Higiene</a><a class="subcategory-link" href="#ofertas" data-subcategory="Fraldas">Fraldas</a><a class="subcategory-link" href="#ofertas" data-subcategory="Alimentação">Alimentação</a><a class="subcategory-link" href="#ofertas" data-subcategory="Brinquedo infantil">Brinquedos</a><a class="subcategory-link" href="#ofertas" data-subcategory="Passeio">Passeio e segurança</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Saúde e Beleza</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="saude-beleza">Ver tudo em Saúde e Beleza</a><a class="subcategory-link" href="#ofertas" data-subcategory="Cuidados pessoais">Cuidados pessoais</a><a class="subcategory-link" href="#ofertas" data-subcategory="Skincare">Skincare</a><a class="subcategory-link" href="#ofertas" data-subcategory="Maquiagem">Maquiagem</a><a class="subcategory-link" href="#ofertas" data-subcategory="Perfume">Perfumes</a><a class="subcategory-link" href="#ofertas" data-subcategory="Suplemento">Suplementos</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Ferramentas e Auto</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="ferramentas-auto">Ver tudo em Ferramentas e Auto</a><a class="subcategory-link" href="#ofertas" data-subcategory="Ferramenta">Ferramentas</a><a class="subcategory-link" href="#ofertas" data-subcategory="Acessório automotivo">Acessórios automotivos</a><a class="subcategory-link" href="#ofertas" data-subcategory="Pneu">Pneus</a><a class="subcategory-link" href="#ofertas" data-subcategory="Manutenção">Manutenção</a><a class="subcategory-link" href="#ofertas" data-subcategory="Moto">Peças para moto</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Moda e Acessórios</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="moda-acessorios">Ver tudo em Moda e Acessórios</a><a class="subcategory-link" href="#ofertas" data-subcategory="Roupa">Roupas</a><a class="subcategory-link" href="#ofertas" data-subcategory="Calçado">Calçados</a><a class="subcategory-link" href="#ofertas" data-subcategory="Bolsa">Bolsas</a><a class="subcategory-link" href="#ofertas" data-subcategory="Relógio">Relógios</a><a class="subcategory-link" href="#ofertas" data-subcategory="Joia">Joias e acessórios</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Esporte e Lazer</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="esporte-lazer">Ver tudo em Esporte e Lazer</a><a class="subcategory-link" href="#ofertas" data-subcategory="Academia">Academia e musculação</a><a class="subcategory-link" href="#ofertas" data-subcategory="Ciclismo">Ciclismo</a><a class="subcategory-link" href="#ofertas" data-subcategory="Camping">Camping e aventura</a><a class="subcategory-link" href="#ofertas" data-subcategory="Esporte">Esportes</a><a class="subcategory-link" href="#ofertas" data-subcategory="Lazer">Lazer ao ar livre</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Pet Shop</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="pet-shop">Ver tudo em Pet Shop</a><a class="subcategory-link" href="#ofertas" data-subcategory="Ração">Rações</a><a class="subcategory-link" href="#ofertas" data-subcategory="Higiene pet">Higiene</a><a class="subcategory-link" href="#ofertas" data-subcategory="Brinquedo pet">Brinquedos</a><a class="subcategory-link" href="#ofertas" data-subcategory="Acessório pet">Acessórios</a><a class="subcategory-link" href="#ofertas" data-subcategory="Saúde pet">Saúde e cuidados</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Supermercado</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="supermercado">Ver tudo em Supermercado</a><a class="subcategory-link" href="#ofertas" data-subcategory="Alimento">Alimentos</a><a class="subcategory-link" href="#ofertas" data-subcategory="Bebida">Bebidas</a><a class="subcategory-link" href="#ofertas" data-subcategory="Limpeza doméstica">Limpeza</a><a class="subcategory-link" href="#ofertas" data-subcategory="Papelaria doméstica">Papel e descartáveis</a><a class="subcategory-link" href="#ofertas" data-subcategory="Pet food">Produtos para pets</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Livros e Papelaria</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="livros-papelaria">Ver tudo em Livros e Papelaria</a><a class="subcategory-link" href="#ofertas" data-subcategory="Livro">Livros</a><a class="subcategory-link" href="#ofertas" data-subcategory="Papelaria">Papelaria</a><a class="subcategory-link" href="#ofertas" data-subcategory="Arte">Arte e artesanato</a><a class="subcategory-link" href="#ofertas" data-subcategory="Instrumento musical">Instrumentos musicais</a><a class="subcategory-link" href="#ofertas" data-subcategory="Colecionável">Colecionáveis</a></div></div>
+    <div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">Outros</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="outros">Ver tudo em Outros</a><a class="subcategory-link" href="#ofertas" data-subcategory="Outro">Outros produtos</a></div></div>
 
     <h4>Lojas</h4>
-    <a href="#">Shopee</a>
-    <a href="#">Mercado Livre</a>
-    <a href="#">Amazon</a>
-    <a href="#">AliExpress</a>
+    <a href="lojas.html?loja=shopee">Shopee</a>
+    <a href="lojas.html?loja=mercado_livre">Mercado Livre</a>
+    <a href="lojas.html?loja=amazon">Amazon</a>
+    <a href="lojas.html?loja=aliexpress">AliExpress</a>
 
     <h4>Links</h4>
     <a href="#">Entrar no Telegram</a>
     <a href="#">Entrar no WhatsApp</a>
     <a href="login.html" id="accountDrawerLink">Entrar</a>
-    <a href="admin.html" id="adminDrawerLink" hidden>Painel administrativo</a>
+    <a href="analytics.html" id="adminDrawerLink" hidden>Painel administrativo</a>
     <a href="contato.html">Contato</a>
     <a href="https://www.youtube.com/@reiwo" target="_blank" rel="noopener">YouTube ReiWO</a>
     <a href="https://www.instagram.com/reiwooficial/" target="_blank" rel="noopener">Instagram ReiWO</a>
@@ -605,7 +620,7 @@
     <div class="grid" id="ofertas">
 
       <div class="card is-link" style="--i:0;" data-category="perifericos" data-subcategory="Headset" data-rating="4.9" data-review-count="10387" data-product-url="produto.html" role="link" tabindex="0" aria-label="Abrir página do Headset sem fio Redragon H510-PRO">
-        <div class="card-media"><img src="redragon-h510-pro.png" alt="Headset sem fio Redragon H510-PRO preto"><span class="discount-flag">-31%</span><span class="store-badge">Mercado Livre</span></div>
+        <div class="card-media"><img src="assets/products/redragon-h510-pro.png" alt="Headset sem fio Redragon H510-PRO preto"><span class="discount-flag">-31%</span><span class="store-badge">Mercado Livre</span></div>
         <div class="card-body">
           <div class="card-title">Headset sem fio Redragon H510-PRO preto com luz LED</div>
           <div class="price-block">
@@ -617,7 +632,7 @@
       </div>
 
       <div class="card is-link" style="--i:1;" data-category="bebes" data-subcategory="Higiene" data-rating="4.8" data-review-count="8" data-product-url="produto-lencos.html" role="link" tabindex="0" aria-label="Abrir página do Kit com 3 lenços umedecidos Personalidade Baby">
-        <div class="card-media"><img src="lencos-personalidade-baby.png" alt="Kit com 3 pacotes de lenços umedecidos Personalidade Baby"><span class="discount-flag">-12%</span><span class="store-badge">Mercado Livre</span></div>
+        <div class="card-media"><img src="assets/products/lencos-personalidade-baby.png" alt="Kit com 3 pacotes de lenços umedecidos Personalidade Baby"><span class="discount-flag">-12%</span><span class="store-badge">Mercado Livre</span></div>
         <div class="card-body">
           <div class="card-title">Kit com 3 Lenços Umedecidos Personalidade Baby, 100 unidades cada</div>
           <div class="price-block"><div class="price-old-row"><span class="price-old-label">De</span><span class="price-old">R$ 26,52</span></div><div class="price-new-row"><span class="price-new-label">Por</span><span class="price-new">R$ 23,17</span></div></div>
@@ -626,7 +641,7 @@
       </div>
 
       <div class="card is-link" style="--i:2;" data-category="perifericos" data-subcategory="Microfone" data-rating="4.7" data-review-count="98" data-product-url="produto-microfone.html" role="link" tabindex="0" aria-label="Abrir página do Microfone Gamer Profissional RGB">
-        <div class="card-media"><img src="microfone-gamer-rgb.png" alt="Microfone gamer condensador com LED RGB"><span class="discount-flag">-50%</span><span class="store-badge">Mercado Livre</span></div>
+        <div class="card-media"><img src="assets/products/microfone-gamer-rgb.png" alt="Microfone gamer condensador com LED RGB"><span class="discount-flag">-50%</span><span class="store-badge">Mercado Livre</span></div>
         <div class="card-body">
           <div class="card-title">Microfone Gamer Profissional Condensador para PC com LED RGB</div>
           <div class="price-block"><div class="price-old-row"><span class="price-old-label">De</span><span class="price-old">R$ 199,00</span></div><div class="price-new-row"><span class="price-new-label">Por</span><span class="price-new">R$ 99,50</span></div></div>
@@ -724,6 +739,38 @@
     if (document.fonts?.ready) document.fonts.ready.then(prepararTickerContinuo);
     else window.addEventListener('load', prepararTickerContinuo, { once: true });
 
+    const logoInicial = document.querySelector('.hero-logo');
+    if (logoInicial) {
+      logoInicial.setAttribute('role', 'link');
+      logoInicial.setAttribute('tabindex', '0');
+      logoInicial.setAttribute('title', 'Voltar ao início');
+      logoInicial.addEventListener('click', () => window.location.assign('index.html'));
+      logoInicial.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          window.location.assign('index.html');
+        }
+      });
+    }
+
+    const botaoTopo = document.getElementById('scrollTopButton');
+    function atualizarBotaoTopo() {
+      if (botaoTopo) botaoTopo.hidden = window.scrollY < 240;
+    }
+    if (botaoTopo) {
+      botaoTopo.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      window.addEventListener('scroll', atualizarBotaoTopo, { passive: true });
+      atualizarBotaoTopo();
+    }
+
+    document.querySelector('.top-nav .nav-contact')?.remove();
+    const rodapePrincipal = document.querySelector('.site-footer');
+    if (rodapePrincipal) {
+      const marcaRodape = rodapePrincipal.querySelector('.footer-brand');
+      if (marcaRodape) marcaRodape.innerHTML = '<a class="footer-logo" href="index.html" aria-label="Economizaí — início"><img src="assets/logo-economizai-completo.png" alt="Economizaí"></a><small>Um projeto ReiWO.</small><span class="footer-contact-label">Dúvidas ou divulgações?</span><a class="footer-contact" href="contato.html">Contato</a>';
+      rodapePrincipal.querySelector('.footer-col a[href="contato.html"]')?.remove();
+    }
+
     function abrirPainelCategorias() {
       document.getElementById('sidePanel').classList.add('open');
       document.getElementById('sideOverlay').classList.add('open');
@@ -786,8 +833,23 @@
     const subcategoriasPorCategoria = {
       perifericos: ['Headset', 'Microfone', 'Teclado', 'Mouse', 'Monitor', 'Webcam', 'Acessório'], hardware: ['SSD', 'Memória RAM', 'Placa de vídeo', 'Processador', 'Placa-mãe', 'Fonte'],
       informatica: ['Notebook', 'Impressora', 'Câmera'], smartphones: ['Smartphone', 'Tablet', 'Smartwatch'], 'tvs-audio': ['TV', 'Caixa de som', 'Fone de ouvido', 'Soundbar'],
-      games: ['Console', 'Jogo', 'Controle', 'Cadeira gamer'], bebes: ['Higiene', 'Fraldas', 'Alimentação', 'Brinquedo infantil'],
+      games: ['Console', 'Jogo', 'Controle', 'Cadeira gamer', 'Acessório gamer'], bebes: ['Higiene', 'Fraldas', 'Alimentação', 'Brinquedo infantil', 'Passeio'],
+      'casa-cozinha': ['Eletrodoméstico', 'Cozinha', 'Limpeza', 'Organização', 'Móveis'],
+      'saude-beleza': ['Cuidados pessoais', 'Skincare', 'Maquiagem', 'Perfume', 'Suplemento'],
+      'ferramentas-auto': ['Ferramenta', 'Acessório automotivo', 'Pneu', 'Manutenção', 'Moto'],
+      'moda-acessorios': ['Roupa', 'Calçado', 'Bolsa', 'Relógio', 'Joia'],
+      'esporte-lazer': ['Academia', 'Ciclismo', 'Camping', 'Esporte', 'Lazer'],
+      'pet-shop': ['Ração', 'Higiene pet', 'Brinquedo pet', 'Acessório pet', 'Saúde pet'],
+      supermercado: ['Alimento', 'Bebida', 'Limpeza doméstica', 'Papelaria doméstica', 'Pet food'],
+      'livros-papelaria': ['Livro', 'Papelaria', 'Arte', 'Instrumento musical', 'Colecionável'], outros: ['Outro'],
     };
+    const categoryLabels = { 'esporte-lazer': 'Esporte e Lazer', 'pet-shop': 'Pet Shop', supermercado: 'Supermercado', 'livros-papelaria': 'Livros e Papelaria' };
+    const categoryFilter = document.getElementById('filterCategory');
+    Object.entries(categoryLabels).forEach(([value, label]) => {
+      if (!categoryFilter.querySelector(`option[value="${value}"]`)) {
+        const option = document.createElement('option'); option.value = value; option.textContent = label; categoryFilter.append(option);
+      }
+    });
 
     function adicionarAvaliacaoAoCard(card, rating = card.dataset.rating, reviewCount = card.dataset.reviewCount) {
       card.querySelector('.card-rating')?.remove();
@@ -951,21 +1013,26 @@
         atualizarResumoCategoria();
         atualizarOfertas();
         fecharPainelCategorias();
-        document.getElementById('ofertas').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const query = filtroCategoria === 'all' ? '' : `?categoria=${encodeURIComponent(filtroCategoria)}`;
+        window.history.replaceState({}, '', `${window.location.pathname}${query}`);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     });
 
     document.querySelectorAll('.side-panel [data-subcategory]').forEach((link) => {
       link.addEventListener('click', (event) => {
         event.preventDefault();
-        filtroCategoria = 'all';
+        const categoryLink = link.closest('.category-group')?.querySelector('[data-category]');
+        filtroCategoria = categoryLink?.dataset.category || 'all';
         filtroSubcategoria = link.dataset.subcategory;
-        document.getElementById('filterCategory').value = 'all';
+        document.getElementById('filterCategory').value = filtroCategoria;
         preencherTipos();
         atualizarResumoCategoria();
         atualizarOfertas();
         fecharPainelCategorias();
-        document.getElementById('ofertas').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const query = new URLSearchParams({ categoria: filtroCategoria, subcategoria: filtroSubcategoria });
+        window.history.replaceState({}, '', `${window.location.pathname}?${query.toString()}`);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     });
 
