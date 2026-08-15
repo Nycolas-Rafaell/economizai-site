@@ -95,7 +95,15 @@
 .admin-price-current strong { color: #ffc42d; font: 800 25px/1 Sora, Inter, system-ui; }
 .admin-discount { padding: 5px 7px; border-radius: 6px; background: #23bd66; color: #07170d; font-size: 12px; font-weight: 900; white-space: nowrap; }
 
-.admin-offer-card .card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: auto; padding-top: 16px; }
+.admin-offer-card .quick-status { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-top:auto; padding-top:16px; }
+.admin-offer-card .quick-status button { min-height:34px; padding:5px 4px; border:1px solid #3a3a3a; border-radius:7px; background:#202020; color:#ddd; font:800 10px/1.1 Inter,system-ui; cursor:pointer; }
+.admin-offer-card .quick-status button:hover:not(:disabled) { filter:brightness(1.16); }
+.admin-offer-card .quick-status button:disabled { cursor:default; opacity:1; }
+.admin-offer-card .quick-publish.is-active { border-color:#278c58; background:#123122; color:#9aebbb; }
+.admin-offer-card .quick-pending.is-active { border-color:#9b7617; background:#30260e; color:#ffdb70; }
+.admin-offer-card .quick-unavailable.is-active { border-color:#a73f3a; background:#351a18; color:#ffaaa4; }
+
+.admin-offer-card .card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 12px; }
 .admin-offer-card .card-actions a,
 .admin-offer-card .card-actions button {
   display: grid;
@@ -123,4 +131,5 @@
   .admin-card-media { height: 210px; }
   .admin-card-body { min-height: 0; }
   .admin-card-title { min-height: 0; }
+  .admin-offer-card .quick-status button { font-size:11px; }
 }

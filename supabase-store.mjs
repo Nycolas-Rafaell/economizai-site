@@ -57,7 +57,12 @@ export function createSupabaseOfferStore(config) {
 
   async function lookupId(table, slug) {
     const rows = await request(`${table}?select=id&slug=eq.${encodeURIComponent(slug)}&limit=1`);
-    if (!rows?.[0]?.id) throw new Error(`Supabase: ${table} não contém o registro “${slug}”.`);
+    if (!rows?.[0]?.id) {
+      const help = table === 'categories'
+        ? ' Execute a migração database/migrations/SUPABASE-CATEGORIAS-CATALOGO.sql no SQL Editor do Supabase.'
+        : '';
+      throw new Error(`Supabase: ${table} não contém o registro “${slug}”.${help}`);
+    }
     return rows[0].id;
   }
 

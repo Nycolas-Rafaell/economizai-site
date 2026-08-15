@@ -389,13 +389,74 @@
     return captureMercadoLivre();
   }
 
+  const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+  function isVisible(element) {
+    if (!element || !element.getClientRects().length) return false;
+    const style = getComputedStyle(element);
+    return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || 1) > 0;
+  }
+
+  function findGeneratedAffiliateLink() {
+    const candidates = [...document.querySelectorAll('input, textarea, a[href]')]
+      .filter(isVisible)
+      .map((element) => clean(element.value || element.href || element.getAttribute('href')))
+      .filter((value) => /^https:\/\/meli\.la\//i.test(value));
+    return candidates[0] || '';
+  }
+
+  function findAffiliateShareButton() {
+    const candidates = [...document.querySelectorAll('button, a, [role="button"]')]
+      .filter(isVisible)
+      .filter((element) => /compartilhar/i.test(clean(element.innerText || element.textContent || element.getAttribute('aria-label'))));
+    // A Barra de Afiliados fica no topo. Assim evitamos usar o compartilhamento
+    // comum da página do produto quando os dois estão visíveis.
+    return candidates.find((element) => element.getBoundingClientRect().top < 180) || candidates[0] || null;
+  }
+
+  async function generateAffiliateLink() {
+    const alreadyGenerated = findGeneratedAffiliateLink();
+    if (alreadyGenerated) return { ok: true, affiliateUrl: alreadyGenerated };
+
+    const shareButton = findAffiliateShareButton();
+    if (!shareButton) {
+      return {
+        ok: false,
+        message: 'Não encontrei o botão “Compartilhar” da Barra de Afiliados. Confirme que você está logado no Mercado Livre como afiliado.'
+      };
+    }
+
+    shareButton.click();
+    // A janela da Barra de Afiliados pode demorar alguns segundos para montar o
+    // campo com meli.la. Fazemos várias leituras na mesma execução para que o
+    // usuário não precise abrir a extensão uma segunda vez.
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      await wait(500);
+      const generatedLink = findGeneratedAffiliateLink();
+      if (generatedLink) return { ok: true, affiliateUrl: generatedLink };
+    }
+
+    return {
+      ok: false,
+      message: 'A janela oficial foi aberta, mas o link não apareceu após alguns segundos. Gere-o nessa janela e use o campo manual como alternativa.'
+    };
+  }
+
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type !== 'economizai-capture-product') return;
-    const capture = captureProduct();
-    if (!capture.title && !capture.currentPrice) {
-      sendResponse({ ok: false, message: 'Não encontrei informações suficientes nesta página. Aguarde o produto terminar de carregar e tente novamente.' });
+    if (message?.type === 'economizai-capture-product') {
+      const capture = captureProduct();
+      if (!capture.title && !capture.currentPrice) {
+        sendResponse({ ok: false, message: 'Não encontrei informações suficientes nesta página. Aguarde o produto terminar de carregar e tente novamente.' });
+        return;
+      }
+      sendResponse({ ok: true, capture });
       return;
     }
-    sendResponse({ ok: true, capture });
+    if (message?.type === 'economizai-generate-affiliate-link') {
+      generateAffiliateLink()
+        .then(sendResponse)
+        .catch(() => sendResponse({ ok: false, message: 'Não foi possível ler o link gerado pela Barra de Afiliados.' }));
+      return true;
+    }
   });
 })();

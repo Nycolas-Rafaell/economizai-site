@@ -14,11 +14,13 @@ Extensão local gratuita para capturar os dados visíveis de páginas do Mercado
 
 1. Deixe o Economizaí rodando em `http://localhost:3000` e entre como administrador.
 2. Abra uma página de produto do Mercado Livre.
-3. Clique no ícone da extensão e pressione **Capturar e abrir rascunho**.
-4. No painel, informe manualmente seu link de afiliado, revise os campos e salve. A oferta entra como **Aguardando publicação** por segurança.
+3. Clique no ícone da extensão e use **Gerar link na Barra de Afiliados**. Ela abre o compartilhamento oficial e tenta localizar o link `meli.la` que a própria página exibe.
+4. Se o Mercado Livre ainda não tiver mostrado o link, gere-o na janela oficial, abra a extensão novamente e repita o botão. Você também pode colar o link manualmente no campo de reserva.
+5. Pressione **Capturar e abrir rascunho**. Revise os campos e salve. A oferta entra como **Aguardando publicação** por segurança.
 
 ## Limites da primeira versão
 
 - Compatível com Mercado Livre.
+- O teste assistido usa apenas a interface visível da Barra de Afiliados: não acessa cookies, credenciais, CAPTCHA nem APIs privadas. A geração continua dependente de você estar logado e de o Mercado Livre exibir a janela oficial.
 - Lê somente dados já visíveis na página aberta; não consulta API, não faz varredura em segundo plano e não publica automaticamente.
 - Os seletores podem precisar de ajustes se o Mercado Livre mudar o layout. Sempre revise preço, disponibilidade e link antes de salvar.

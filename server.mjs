@@ -750,6 +750,11 @@ function normalizeManualOffer(data) {
   };
 }
 
+function isPublicOffer(offer) {
+  const status = offer.availabilityStatus || (offer.available === false ? 'unavailable' : 'available');
+  return status === 'available';
+}
+
 async function saveOffer(offer, priceSource = 'painel') {
   if (supabaseStore.enabled) {
     const existingOffer = (await getAllOffers()).find((savedOffer) => savedOffer.id === offer.id || savedOffer.publicUrl === offer.publicUrl);
@@ -901,7 +906,7 @@ function escapeXml(value) {
 
 async function createSitemap(origin) {
   const staticPaths = ['/', '/lojas.html', '/sobre.html', '/como-encontramos-ofertas.html', '/transparencia.html', '/contato.html', '/privacidade.html', '/termos.html'];
-  const offers = (await getAllOffers()).filter((offer) => offer.availabilityStatus !== 'pending' && offer.available !== false);
+  const offers = (await getAllOffers()).filter(isPublicOffer);
   const urls = [...staticPaths.map((pathName) => `${origin}${pathName}`), ...offers.map((offer) => `${origin}/produto-dinamico.html?id=${encodeURIComponent(offer.id)}`)];
   return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map((loc) => `<url><loc>${escapeXml(loc)}</loc></url>`).join('')}</urlset>`;
 }
@@ -1213,16 +1218,27 @@ const server = http.createServer(async (request, response) => {
       await supabaseRest('site_events', { method: 'POST', prefer: 'return=minimal', body: [{ event_type: eventType, session_id: sessionId, page_path: pagePath, offer_external_id: offerId, category_slug: category }] });
       return sendJson(response, 201, { ok: true });
     }
-    if (request.method === 'GET' && url.pathname === '/api/ofertas') return sendJson(response, 200, (await getAllOffers()).filter((offer) => offer.availabilityStatus !== 'pending'));
+    if (request.method === 'GET' && url.pathname === '/api/ofertas') return sendJson(response, 200, (await getAllOffers()).filter(isPublicOffer));
 
     const publicOfferMatch = url.pathname.match(/^\/api\/ofertas\/([^/]+)$/);
     if (request.method === 'GET' && publicOfferMatch) {
       const offer = (await getAllOffers()).find((savedOffer) => savedOffer.id === decodeURIComponent(publicOfferMatch[1]));
-      if (!offer) return sendJson(response, 404, { message: 'Oferta não encontrada.' });
+      if (!offer || !isPublicOffer(offer)) return sendJson(response, 404, { message: 'Oferta não encontrada.' });
       return sendJson(response, 200, offer);
     }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/ofertas') return sendJson(response, 200, await getAllOffers());
+
+    const quickOfferStatusMatch = url.pathname.match(/^\/api\/admin\/ofertas\/([^/]+)\/status$/);
+    if (request.method === 'PATCH' && quickOfferStatusMatch) {
+      const status = String((await readBody(request)).status || '');
+      if (!['available', 'pending', 'unavailable'].includes(status)) return sendJson(response, 400, { message: 'Status de oferta inválido.' });
+      const offerId = decodeURIComponent(quickOfferStatusMatch[1]);
+      const existingOffer = (await getAllOffers()).find((offer) => offer.id === offerId);
+      if (!existingOffer) return sendJson(response, 404, { message: 'Card não encontrado.' });
+      const updatedOffer = await saveOffer({ ...existingOffer, available: status === 'available', availabilityStatus: status, updatedAt: new Date().toISOString() });
+      return sendJson(response, 200, updatedOffer);
+    }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/usuarios') {
       const users = await listAuthUsers();
