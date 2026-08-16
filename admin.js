@@ -295,7 +295,7 @@ function importSearchResult(result, category) {
   field('manualTitle').value = result.title || '';
   field('manualImage').value = result.image || '';
   field('manualCurrentPrice').value = priceForInput(result.currentPrice);
-  field('manualOriginalPrice').value = priceForInput(result.originalPrice);
+  field('manualOriginalPrice').value = optionalPriceForInput(result.originalPrice);
   field('manualPublicUrl').value = result.publicUrl || '';
   field('manualAffiliateUrl').value = '';
   field('manualCategory').value = category;
@@ -365,10 +365,21 @@ function priceForInput(value) {
   return Number.isFinite(amount) ? amount.toFixed(2).replace('.', ',') : String(value);
 }
 
+// Preço antigo é opcional. Uma captura que retorna 0 significa apenas que o
+// anúncio não mostrou preço de referência, e não um preço real de R$ 0,00.
+function optionalPriceForInput(value) {
+  const formatted = priceForInput(value);
+  const amount = Number(String(formatted).replace(/\./g, '').replace(',', '.'));
+  return Number.isFinite(amount) && amount > 0 ? formatted : '';
+}
+
 ['manualCurrentPrice', 'manualOriginalPrice'].forEach((id) => {
   field(id).addEventListener('blur', (event) => {
-    const formatted = priceForInput(event.currentTarget.value);
+    const formatted = id === 'manualOriginalPrice'
+      ? optionalPriceForInput(event.currentTarget.value)
+      : priceForInput(event.currentTarget.value);
     if (formatted) event.currentTarget.value = formatted;
+    else if (id === 'manualOriginalPrice') event.currentTarget.value = '';
   });
 });
 
@@ -624,7 +635,7 @@ clearDraftButton.addEventListener('click', async () => {
   status.textContent = 'Campos e rascunho apagados.';
 });
 
-function editOffer(offer) { editingId = offer.id; selectMode('manual'); field('manualHeading').textContent = 'Editar card'; field('manualSubmit').textContent = 'Salvar alterações'; field('cancelEdit').hidden = false; field('manualMarketplace').value = offer.marketplace === 'shopee' ? 'shopee' : 'mercado_livre'; field('manualTitle').value = offer.title || ''; field('manualImage').value = offer.image || ''; field('manualDescription').value = offer.description || ''; field('manualReviewSummary').value = offer.reviewSummary || ''; field('manualRating').value = offer.rating || ''; field('manualReviewCount').value = offer.reviewCount || ''; field('manualCommentCount').value = offer.commentCount || ''; field('manualCurrentPrice').value = priceForInput(offer.currentPrice); field('manualOriginalPrice').value = priceForInput(offer.originalPrice); field('manualPublicUrl').value = offer.publicUrl || ''; field('manualAffiliateUrl').value = offer.affiliateUrl || ''; field('manualCategory').value = offer.category || 'outros'; renderProductTypes(); field('manualSubcategory').value = offer.subcategory || field('manualSubcategory').value; field('manualAvailable').value = offer.availabilityStatus || (offer.available === false ? 'unavailable' : 'available'); preservedSpecifications = offer.specifications || {}; field('manualFreeShipping').checked = Boolean(offer.freeShipping); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function editOffer(offer) { editingId = offer.id; selectMode('manual'); field('manualHeading').textContent = 'Editar card'; field('manualSubmit').textContent = 'Salvar alterações'; field('cancelEdit').hidden = false; field('manualMarketplace').value = offer.marketplace === 'shopee' ? 'shopee' : 'mercado_livre'; field('manualTitle').value = offer.title || ''; field('manualImage').value = offer.image || ''; field('manualDescription').value = offer.description || ''; field('manualReviewSummary').value = offer.reviewSummary || ''; field('manualRating').value = offer.rating || ''; field('manualReviewCount').value = offer.reviewCount || ''; field('manualCommentCount').value = offer.commentCount || ''; field('manualCurrentPrice').value = priceForInput(offer.currentPrice); field('manualOriginalPrice').value = optionalPriceForInput(offer.originalPrice); field('manualPublicUrl').value = offer.publicUrl || ''; field('manualAffiliateUrl').value = offer.affiliateUrl || ''; field('manualCategory').value = offer.category || 'outros'; renderProductTypes(); field('manualSubcategory').value = offer.subcategory || field('manualSubcategory').value; field('manualAvailable').value = offer.availabilityStatus || (offer.available === false ? 'unavailable' : 'available'); preservedSpecifications = offer.specifications || {}; field('manualFreeShipping').checked = Boolean(offer.freeShipping); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
 async function excluirOferta(offer, button) { const promptText = 'Digite EXCLUIR para confirmar a remoção permanente deste card.'; const confirmation = window.EconomizaiUI?.ask ? await window.EconomizaiUI.ask({ title: 'Excluir card?', text: `Esta ação remove “${offer.title}” do site e não pode ser desfeita.`, label: promptText }) : window.prompt(promptText); if (confirmation !== 'EXCLUIR') { if (confirmation !== null) { status.hidden = false; status.className = 'status error'; status.textContent = 'Exclusão cancelada: digite EXCLUIR em letras maiúsculas para confirmar.'; } return; } button.disabled = true; status.hidden = false; status.className = 'status'; status.textContent = 'Excluindo card…'; try { const response = await fetch(`/api/admin/ofertas/${encodeURIComponent(offer.id)}`, { method: 'DELETE' }); const result = await readServerJson(response); if (!response.ok) throw new Error(result.message || 'Não foi possível excluir o card.'); status.className = 'status success'; status.textContent = 'Card excluído.'; await loadOffers(); } catch (error) { status.className = 'status error'; status.textContent = error.message; } finally { button.disabled = false; } }
 async function loadOffers() { try { const response = await fetch('/api/admin/ofertas', { cache: 'no-store' }); offers = await response.json(); savedOffers.innerHTML = ''; pendingOffers.innerHTML = ''; const statusOf = (offer) => offer.availabilityStatus || (offer.available === false ? 'unavailable' : 'available'); const published = offers.filter((offer) => statusOf(offer) !== 'pending'); const pending = offers.filter((offer) => statusOf(offer) === 'pending'); field('metricAvailable').textContent = offers.filter((offer) => statusOf(offer) === 'available').length; field('metricPending').textContent = pending.length; field('metricUnavailable').textContent = offers.filter((offer) => statusOf(offer) === 'unavailable').length; field('cardsCounter').textContent = `${offers.length} ${offers.length === 1 ? 'card cadastrado' : 'cards cadastrados'}`; savedEmpty.textContent = published.length ? '' : 'Nenhum card publicado ou indisponível.'; pendingEmpty.textContent = pending.length ? '' : 'Nenhum card aguardando publicação.'; const term = String(field('adminOfferSearch')?.value || '').trim().toLocaleLowerCase('pt-BR'); const visibleOffers = offers.filter((offer) => !term || `${offer.title || ''} ${offer.category || ''} ${offer.subcategory || ''}`.toLocaleLowerCase('pt-BR').includes(term)); visibleOffers.forEach((offer) => { const offerStatus = statusOf(offer); const labels = { available: 'Disponível no site', unavailable: 'Oferta não disponível', pending: 'Aguardando publicação' }; const row = document.createElement('article'); row.className = `saved-card status-${offerStatus}`; const text = document.createElement('div'); const title = document.createElement('strong'); title.textContent = offer.title; const info = document.createElement('small'); info.textContent = `${formatPrice(offer.currentPrice)} · ${offer.category || 'outros'}`; const statusLabel = document.createElement('span'); statusLabel.className = 'offer-status'; statusLabel.textContent = labels[offerStatus] || labels.available; text.append(title, info, statusLabel); const actions = document.createElement('div'); actions.className = 'saved-card-actions'; const editButton = document.createElement('button'); editButton.className = 'edit'; editButton.type = 'button'; editButton.textContent = 'Editar'; editButton.addEventListener('click', () => editOffer(offer)); const deleteButton = document.createElement('button'); deleteButton.className = 'delete'; deleteButton.type = 'button'; deleteButton.textContent = 'Excluir'; deleteButton.addEventListener('click', () => excluirOferta(offer, deleteButton)); actions.append(editButton, deleteButton); row.append(text, actions); (offerStatus === 'pending' ? pendingOffers : savedOffers).append(row); }); if (term && !visibleOffers.length) savedEmpty.textContent = 'Nenhum card encontrado com essa busca.'; } catch { savedEmpty.textContent = 'Não foi possível carregar os cards cadastrados.'; pendingEmpty.textContent = ''; } }
@@ -694,7 +705,7 @@ function applyExtensionCapture(capture) {
   field('manualTitle').value = String(capture.title || '');
   field('manualImage').value = String(capture.image || '');
   field('manualCurrentPrice').value = priceForInput(capture.currentPrice);
-  field('manualOriginalPrice').value = priceForInput(capture.originalPrice);
+  field('manualOriginalPrice').value = optionalPriceForInput(capture.originalPrice);
   field('manualRating').value = String(capture.rating || '');
   field('manualReviewCount').value = String(capture.reviewCount || '');
   field('manualCommentCount').value = String(capture.commentCount || '');

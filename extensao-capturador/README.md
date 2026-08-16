@@ -18,6 +18,10 @@ Extensão local gratuita para capturar os dados visíveis de páginas do Mercado
 4. Se o Mercado Livre não mostrar o link em alguns segundos, gere-o na janela oficial e use o campo manual como alternativa.
 5. O Economizaí cria o card automaticamente como **Aguardando publicação**. Você pode revisar, editar e publicar depois em **Cards cadastrados**.
 
+## Captura automática (opcional)
+
+Ative **Captura automática** no popup da extensão apenas quando quiser cadastrar vários produtos. A escolha fica salva até você desligá-la. Ao abrir uma página de produto do Mercado Livre, a extensão tenta gerar o link de afiliado, captura os dados e cria o card como **Aguardando publicação**. Cada URL é enviada uma única vez, evitando duplicação durante a navegação.
+
 ## Limites da primeira versão
 
 - Compatível com Mercado Livre.

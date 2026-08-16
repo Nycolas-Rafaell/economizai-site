@@ -343,6 +343,14 @@
   }
   .card:hover .card-cta { filter: brightness(1.08); }
 
+  .card-skeleton { min-height:410px; pointer-events:none; opacity:1; animation:none; }
+  .card-skeleton:hover { transform:none; background:var(--bg-panel); border-color:var(--border-soft); }
+  .skeleton-media, .skeleton-line, .skeleton-price, .skeleton-button { border-radius:7px; background:linear-gradient(100deg,#202020 25%,#2b2b2b 45%,#202020 65%); background-size:220% 100%; animation:skeleton-shimmer 1.35s ease-in-out infinite; }
+  .skeleton-media { height:220px; }
+  .skeleton-body { display:grid; gap:12px; padding:14px 15px 16px; }
+  .skeleton-line { height:14px; width:100%; }.skeleton-line.short { width:62%; }.skeleton-price { height:29px; width:52%; }.skeleton-button { height:40px; width:100%; margin-top:6px; }
+  @keyframes skeleton-shimmer { to { background-position:-220% 0; } }
+
   .empty {
     text-align: center;
     padding: 70px 20px;
@@ -352,6 +360,14 @@
     font-size: 14px;
     display: none;
   }
+  .offers-pagination { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin:6px 0 42px; }
+  .offers-pagination[hidden] { display:none; }
+  .pagination-button, .pagination-ellipsis { min-width:38px; height:36px; padding:0 10px; border:1px solid var(--border-soft); border-radius:8px; background:var(--bg-panel); color:var(--text-primary); font:700 13px 'Inter',sans-serif; }
+  .pagination-button { cursor:pointer; }
+  .pagination-button:hover:not(:disabled), .pagination-button.active { border-color:var(--yellow); background:var(--yellow); color:var(--black-ink); }
+  .pagination-button:disabled { opacity:.42; cursor:not-allowed; }
+  .pagination-ellipsis { display:grid; place-items:center; min-width:26px; border-color:transparent; background:transparent; color:var(--text-muted); }
+  .pagination-summary { width:100%; text-align:center; color:var(--text-muted); font-size:12px; margin-top:3px; }
 
   footer {
     border-top: 1px solid var(--border-soft);
@@ -620,7 +636,7 @@
     <div class="grid" id="ofertas">
 
       <div class="card is-link" style="--i:0;" data-category="perifericos" data-subcategory="Headset" data-rating="4.9" data-review-count="10387" data-product-url="produto.html" role="link" tabindex="0" aria-label="Abrir página do Headset sem fio Redragon H510-PRO">
-        <div class="card-media"><img src="assets/products/redragon-h510-pro.png" alt="Headset sem fio Redragon H510-PRO preto"><span class="discount-flag">-31%</span><span class="store-badge">Mercado Livre</span></div>
+        <div class="card-media"><img src="assets/products/redragon-h510-pro.png" alt="Headset sem fio Redragon H510-PRO preto" loading="lazy" decoding="async"><span class="discount-flag">-31%</span><span class="store-badge">Mercado Livre</span></div>
         <div class="card-body">
           <div class="card-title">Headset sem fio Redragon H510-PRO preto com luz LED</div>
           <div class="price-block">
@@ -632,7 +648,7 @@
       </div>
 
       <div class="card is-link" style="--i:1;" data-category="bebes" data-subcategory="Higiene" data-rating="4.8" data-review-count="8" data-product-url="produto-lencos.html" role="link" tabindex="0" aria-label="Abrir página do Kit com 3 lenços umedecidos Personalidade Baby">
-        <div class="card-media"><img src="assets/products/lencos-personalidade-baby.png" alt="Kit com 3 pacotes de lenços umedecidos Personalidade Baby"><span class="discount-flag">-12%</span><span class="store-badge">Mercado Livre</span></div>
+        <div class="card-media"><img src="assets/products/lencos-personalidade-baby.png" alt="Kit com 3 pacotes de lenços umedecidos Personalidade Baby" loading="lazy" decoding="async"><span class="discount-flag">-12%</span><span class="store-badge">Mercado Livre</span></div>
         <div class="card-body">
           <div class="card-title">Kit com 3 Lenços Umedecidos Personalidade Baby, 100 unidades cada</div>
           <div class="price-block"><div class="price-old-row"><span class="price-old-label">De</span><span class="price-old">R$ 26,52</span></div><div class="price-new-row"><span class="price-new-label">Por</span><span class="price-new">R$ 23,17</span></div></div>
@@ -641,7 +657,7 @@
       </div>
 
       <div class="card is-link" style="--i:2;" data-category="perifericos" data-subcategory="Microfone" data-rating="4.7" data-review-count="98" data-product-url="produto-microfone.html" role="link" tabindex="0" aria-label="Abrir página do Microfone Gamer Profissional RGB">
-        <div class="card-media"><img src="assets/products/microfone-gamer-rgb.png" alt="Microfone gamer condensador com LED RGB"><span class="discount-flag">-50%</span><span class="store-badge">Mercado Livre</span></div>
+        <div class="card-media"><img src="assets/products/microfone-gamer-rgb.png" alt="Microfone gamer condensador com LED RGB" loading="lazy" decoding="async"><span class="discount-flag">-50%</span><span class="store-badge">Mercado Livre</span></div>
         <div class="card-body">
           <div class="card-title">Microfone Gamer Profissional Condensador para PC com LED RGB</div>
           <div class="price-block"><div class="price-old-row"><span class="price-old-label">De</span><span class="price-old">R$ 199,00</span></div><div class="price-new-row"><span class="price-new-label">Por</span><span class="price-new">R$ 99,50</span></div></div>
@@ -710,6 +726,7 @@
       </div>
 
     </div></div>
+    <nav class="offers-pagination" id="offersPagination" aria-label="Paginação das ofertas" hidden></nav>
 
     <div class="empty">Nenhuma oferta publicada ainda. Volte em breve — conferimos novas promoções todos os dias.</div>
   </div>
@@ -821,6 +838,24 @@
     const gradeOfertas = document.querySelector('.grid');
     let cardsOfertas = Array.from(gradeOfertas.querySelectorAll('.card'));
     const avisoVazio = document.querySelector('.empty');
+    const paginacaoOfertas = document.getElementById('offersPagination');
+    let paginaAtual = 1;
+    let ofertasCarregando = true;
+    let paginacaoRemota = null;
+    let ordenacaoOfertas = '';
+    let requisicaoDeOfertas = 0;
+
+    function mostrarCarregamentoDeOfertas() {
+      gradeOfertas.replaceChildren(...Array.from({ length: window.matchMedia('(max-width: 520px)').matches ? 3 : 4 }, () => {
+        const placeholder = document.createElement('article');
+        placeholder.className = 'card card-skeleton'; placeholder.setAttribute('aria-hidden', 'true');
+        placeholder.innerHTML = '<div class="skeleton-media"></div><div class="skeleton-body"><span class="skeleton-line"></span><span class="skeleton-line short"></span><span class="skeleton-price"></span><span class="skeleton-button"></span></div>';
+        return placeholder;
+      }));
+      cardsOfertas = [];
+      gradeOfertas.setAttribute('aria-busy', 'true');
+    }
+    mostrarCarregamentoDeOfertas();
     let filtroDesconto = 'all';
     let filtroCategoria = 'all';
     let filtroSubcategoria = '';
@@ -947,8 +982,84 @@
     function notaDoCard(card) { return Number(String(card.dataset.rating || '0').replace(',', '.')) || 0; }
     function lojaDoCard(card) { return card.dataset.marketplace || (card.querySelector('.store-badge')?.textContent.trim() === 'Shopee' ? 'shopee' : 'mercado_livre'); }
 
-    function atualizarOfertas() {
-      let visiveis = 0;
+    function itensPorPagina() { return window.matchMedia('(max-width: 520px)').matches ? 9 : 12; }
+
+    function urlDasOfertas() {
+      const params = new URLSearchParams({ paginated: '1', page: String(paginaAtual), limit: String(itensPorPagina()), discount: filtroDesconto, category: filtroCategoria, marketplace: filtroLoja, minRating: String(notaMinima) });
+      if (filtroSubcategoria) params.set('subcategory', filtroSubcategoria);
+      if (termoPesquisa) params.set('search', termoPesquisa);
+      if (precoMinimo !== null) params.set('minPrice', String(precoMinimo));
+      if (precoMaximo !== null) params.set('maxPrice', String(precoMaximo));
+      if (ordenacaoOfertas) params.set('sort', ordenacaoOfertas);
+      return `/api/ofertas?${params.toString()}`;
+    }
+
+    const CACHE_DAS_OFERTAS_MS = 30_000;
+    function lerCacheDasOfertas(url) {
+      try {
+        const registro = JSON.parse(sessionStorage.getItem(`economizai:offers:${url}`) || 'null');
+        return registro && Date.now() - registro.savedAt < CACHE_DAS_OFERTAS_MS ? registro.payload : null;
+      } catch { return null; }
+    }
+    function salvarCacheDasOfertas(url, payload) {
+      try {
+        const prefix = 'economizai:offers:';
+        const now = Date.now();
+        Object.keys(sessionStorage).filter((key) => key.startsWith(prefix)).forEach((key) => {
+          try { if (now - JSON.parse(sessionStorage.getItem(key)).savedAt > CACHE_DAS_OFERTAS_MS) sessionStorage.removeItem(key); } catch { sessionStorage.removeItem(key); }
+        });
+        sessionStorage.setItem(`${prefix}${url}`, JSON.stringify({ savedAt: now, payload }));
+      } catch { /* cache é apenas uma melhoria, nunca bloqueia a vitrine */ }
+    }
+
+    function botaoPagina(texto, pagina, { active = false, disabled = false, label = '' } = {}) {
+      const botao = document.createElement('button');
+      botao.type = 'button'; botao.className = 'pagination-button'; botao.textContent = texto;
+      botao.classList.toggle('active', active); botao.disabled = disabled;
+      botao.setAttribute('aria-label', label || `Ir para página ${pagina}`);
+      if (active) botao.setAttribute('aria-current', 'page');
+      botao.addEventListener('click', () => {
+        paginaAtual = pagina;
+        atualizarOfertas(false);
+        document.getElementById('ofertas')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      return botao;
+    }
+
+    function atualizarPaginacao(totalItens) {
+      const porPagina = itensPorPagina();
+      const totalPaginas = Math.max(1, Math.ceil(totalItens / porPagina));
+      paginaAtual = Math.min(Math.max(1, paginaAtual), totalPaginas);
+      paginacaoOfertas.replaceChildren();
+      paginacaoOfertas.hidden = totalItens <= porPagina;
+      if (paginacaoOfertas.hidden) return { porPagina, totalPaginas };
+
+      paginacaoOfertas.append(botaoPagina('←', paginaAtual - 1, { disabled: paginaAtual === 1, label: 'Página anterior' }));
+      const paginas = totalPaginas <= 7
+        ? Array.from({ length: totalPaginas }, (_, index) => index + 1)
+        : [1, ...(paginaAtual > 4 ? ['…'] : []), ...[paginaAtual - 1, paginaAtual, paginaAtual + 1].filter((pagina) => pagina > 1 && pagina < totalPaginas), ...(paginaAtual < totalPaginas - 3 ? ['…'] : []), totalPaginas];
+      [...new Set(paginas)].forEach((pagina) => {
+        if (pagina === '…') {
+          const ellipsis = document.createElement('span'); ellipsis.className = 'pagination-ellipsis'; ellipsis.textContent = '…'; ellipsis.setAttribute('aria-hidden', 'true'); paginacaoOfertas.append(ellipsis);
+        } else paginacaoOfertas.append(botaoPagina(String(pagina), pagina, { active: pagina === paginaAtual }));
+      });
+      paginacaoOfertas.append(botaoPagina('→', paginaAtual + 1, { disabled: paginaAtual === totalPaginas, label: 'Próxima página' }));
+      const inicio = (paginaAtual - 1) * porPagina + 1;
+      const fim = Math.min(totalItens, paginaAtual * porPagina);
+      const resumo = document.createElement('p'); resumo.className = 'pagination-summary'; resumo.textContent = `Mostrando ${inicio}–${fim} de ${totalItens} ofertas`;
+      paginacaoOfertas.append(resumo);
+      return { porPagina, totalPaginas };
+    }
+
+    function atualizarOfertas(reiniciarPagina = true, respostaDaApi = false) {
+      if (!respostaDaApi) {
+        if (reiniciarPagina) paginaAtual = 1;
+        carregarCardsCadastrados();
+        return;
+      }
+      if (ofertasCarregando) return;
+      if (reiniciarPagina) paginaAtual = 1;
+      const visiveis = [];
       cardsOfertas.forEach((card) => {
         const desconto = descontoDoCard(card);
         const correspondeAoDesconto = filtroDesconto === 'all'
@@ -965,9 +1076,15 @@
         const correspondeANota = notaMinima === 0 || notaDoCard(card) >= notaMinima;
         const deveMostrar = correspondeAoDesconto && correspondeACategoria && correspondeAPesquisa && correspondeALoja && correspondeAoPreco && correspondeANota;
         card.hidden = !deveMostrar;
-        if (deveMostrar) visiveis += 1;
+        if (deveMostrar) visiveis.push(card);
       });
-      avisoVazio.style.display = visiveis ? 'none' : 'block';
+      const totalOfertas = paginacaoRemota?.total ?? visiveis.length;
+      const { porPagina } = atualizarPaginacao(totalOfertas);
+      if (!paginacaoRemota) {
+        const inicio = (paginaAtual - 1) * porPagina;
+        visiveis.forEach((card, indice) => { card.hidden = indice < inicio || indice >= inicio + porPagina; });
+      }
+      avisoVazio.style.display = visiveis.length ? 'none' : 'block';
     }
 
     document.querySelectorAll('[data-discount]').forEach((botao) => {
@@ -984,14 +1101,13 @@
 
     document.querySelectorAll('[data-sort]').forEach((botao) => {
       botao.addEventListener('click', () => {
-        const multiplicador = botao.dataset.sort === 'asc' ? 1 : -1;
-        cardsOfertas.sort((a, b) => multiplicador * (precoDoCard(a) - precoDoCard(b)))
-          .forEach((card) => gradeOfertas.appendChild(card));
+        ordenacaoOfertas = botao.dataset.sort;
         document.querySelectorAll('[data-sort]').forEach((item) => {
           const ativo = item === botao;
           item.classList.toggle('active', ativo);
           item.setAttribute('aria-pressed', ativo);
         });
+        atualizarOfertas();
       });
     });
 
@@ -1038,7 +1154,8 @@
 
     document.getElementById('searchOffers').addEventListener('input', (event) => {
       termoPesquisa = event.target.value.trim().toLocaleLowerCase('pt-BR');
-      atualizarOfertas();
+      clearTimeout(window.economizaiSearchTimer);
+      window.economizaiSearchTimer = setTimeout(() => atualizarOfertas(), 220);
     });
 
     function numeroDoFiltro(value) {
@@ -1127,11 +1244,22 @@
     }
 
     async function carregarCardsCadastrados() {
+      const requisicaoAtual = ++requisicaoDeOfertas;
+      ofertasCarregando = true;
       try {
-        const resposta = await fetch('/api/ofertas', { cache: 'no-store' });
-        if (!resposta.ok) return;
-        const ofertas = await resposta.json();
-        const maiorDesconto = Math.max(0, ...ofertas.map((oferta) => Number(oferta.discountPct) || 0));
+        const requestUrl = urlDasOfertas();
+        let payload = lerCacheDasOfertas(requestUrl);
+        if (!payload) {
+          const resposta = await fetch(requestUrl, { cache: 'no-store' });
+          if (!resposta.ok) throw new Error('A lista de ofertas não respondeu.');
+          payload = await resposta.json();
+          salvarCacheDasOfertas(requestUrl, payload);
+        }
+        if (requisicaoAtual !== requisicaoDeOfertas) return;
+        const ofertas = Array.isArray(payload) ? payload : (payload.items || []);
+        paginacaoRemota = Array.isArray(payload) ? null : (payload.pagination || null);
+        if (paginacaoRemota) paginaAtual = paginacaoRemota.page;
+        const maiorDesconto = Number(payload.maxDiscount) || Math.max(0, ...ofertas.map((oferta) => Number(oferta.discountPct) || 0));
         gradeOfertas.innerHTML = '';
         cardsOfertas = [];
         ofertas.forEach((oferta, indice) => {
@@ -1152,7 +1280,7 @@
           const precoAnterior = oferta.originalPrice ? `<div class="price-old-row"><span class="price-old-label">De</span><span class="price-old">${formatarPreco(oferta.originalPrice)}</span></div>` : '';
           const loja = oferta.marketplace === 'shopee' ? 'Shopee' : 'Mercado Livre';
           const paginaProduto = escaparHtml(card.dataset.productUrl);
-          card.innerHTML = `<div class="card-media">${oferta.image ? `<img src="${escaparHtml(oferta.image)}" alt="${escaparHtml(oferta.title)}">` : 'Imagem não disponível'}${desconto}<span class="store-badge">${loja}</span></div><div class="card-body"><div class="card-title">${escaparHtml(oferta.title)}</div><div class="price-block">${precoAnterior}<div class="price-new-row"><span class="price-new-label">Por</span><span class="price-new">${formatarPreco(oferta.currentPrice)}</span></div></div><a class="card-cta" href="${paginaProduto}">Ver oferta</a></div>`;
+          card.innerHTML = `<div class="card-media">${oferta.image ? `<img src="${escaparHtml(oferta.image)}" alt="${escaparHtml(oferta.title)}" loading="lazy" decoding="async">` : 'Imagem não disponível'}${desconto}<span class="store-badge">${loja}</span></div><div class="card-body"><div class="card-title">${escaparHtml(oferta.title)}</div><div class="price-block">${precoAnterior}<div class="price-new-row"><span class="price-new-label">Por</span><span class="price-new">${formatarPreco(oferta.currentPrice)}</span></div></div><a class="card-cta" href="${paginaProduto}">Ver oferta</a></div>`;
           adicionarAvaliacaoAoCard(card, oferta.rating, oferta.reviewCount);
           moverDescontoParaPreco(card);
           adicionarSelosAoCard(card, oferta, maiorDesconto);
@@ -1162,9 +1290,16 @@
           registrarCardClicavel(card);
         });
         cardsOfertas = Array.from(gradeOfertas.querySelectorAll('.card'));
-        atualizarOfertas();
+        ofertasCarregando = false;
+        gradeOfertas.removeAttribute('aria-busy');
+        atualizarOfertas(false, true);
       } catch (erro) {
+        if (requisicaoAtual !== requisicaoDeOfertas) return;
         console.warn('Não foi possível carregar os cards cadastrados.', erro);
+        ofertasCarregando = false;
+        gradeOfertas.removeAttribute('aria-busy');
+        gradeOfertas.replaceChildren();
+        avisoVazio.style.display = 'block';
       }
     }
 

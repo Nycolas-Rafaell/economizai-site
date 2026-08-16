@@ -442,6 +442,36 @@
     };
   }
 
+  function isProductPage() {
+    return /\/p\/ml[a-z]*\d+|\/mlb\d+/i.test(location.pathname)
+      || Boolean(document.querySelector('h1.ui-pdp-title, .ui-pdp-title'));
+  }
+
+  async function startAutomaticCapture() {
+    const stored = await chrome.storage.local.get(['economizaiAutoCapture', 'economizaiDestination']);
+    if (!stored.economizaiAutoCapture || !isProductPage()) return;
+
+    // Aguarda a página completar a montagem antes de abrir a Barra de Afiliados.
+    await wait(2200);
+    let capture;
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      capture = captureProduct();
+      if (capture.title && capture.currentPrice) break;
+      await wait(1000);
+    }
+    if (!capture.title || !capture.currentPrice) return;
+
+    const affiliate = await generateAffiliateLink();
+    if (!affiliate?.affiliateUrl) return;
+
+    await chrome.runtime.sendMessage({
+      type: 'economizai-open-admin',
+      automatic: true,
+      destination: stored.economizaiDestination || 'http://localhost:3000',
+      capture: { ...capture, affiliateUrl: affiliate.affiliateUrl }
+    });
+  }
+
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type === 'economizai-capture-product') {
       const capture = captureProduct();
@@ -458,5 +488,10 @@
         .catch(() => sendResponse({ ok: false, message: 'Não foi possível ler o link gerado pela Barra de Afiliados.' }));
       return true;
     }
+  });
+
+  startAutomaticCapture().catch(() => {
+    // A captura automática não interrompe sua navegação caso a página, login ou
+    // Barra de Afiliados não estejam prontos naquele momento.
   });
 })();

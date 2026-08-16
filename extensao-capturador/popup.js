@@ -1,10 +1,19 @@
 const destination = document.getElementById('destination');
 const affiliateUrl = document.getElementById('affiliateUrl');
+const autoCapture = document.getElementById('autoCapture');
 const captureButton = document.getElementById('capture');
 const status = document.getElementById('status');
 
-chrome.storage.local.get(['economizaiDestination'], (stored) => {
+chrome.storage.local.get(['economizaiDestination', 'economizaiAutoCapture'], (stored) => {
   destination.value = stored.economizaiDestination || 'http://localhost:3000';
+  autoCapture.checked = Boolean(stored.economizaiAutoCapture);
+});
+
+autoCapture.addEventListener('change', async () => {
+  await chrome.storage.local.set({ economizaiAutoCapture: autoCapture.checked });
+  setStatus(autoCapture.checked
+    ? 'Captura automática ativada. Ela continuará ligada até você desativá-la aqui.'
+    : 'Captura automática desativada.', autoCapture.checked ? 'success' : '');
 });
 
 function setStatus(message, type = '') {

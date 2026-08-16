@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { brotliCompressSync, constants as zlibConstants, gzipSync } from 'node:zlib';
 import { createSupabaseOfferStore } from './supabase-store.mjs';
 
 const siteDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -20,6 +21,7 @@ const adminEmail = String(config.ADMIN_EMAIL || '').trim().toLowerCase();
 let oauthAttempt;
 let avatarBucketReady;
 let fullLogoBuffer;
+let fullLogoEtag;
 
 const initialOffers = [
   { id: 'oferta-redragon', marketplace: 'mercado_livre', category: 'perifericos', title: 'Headset sem fio Redragon H510-PRO preto com luz LED', image: 'assets/products/redragon-h510-pro.png', currentPrice: 333.68, originalPrice: 489.66, discountPct: 31, currency: 'BRL', freeShipping: false, publicUrl: 'https://www.mercadolivre.com.br/', affiliateUrl: 'https://meli.la/2FwH9gX', description: 'Headset gamer sem fio com iluminação LED, microfone e conexão pensada para jogos e chamadas. É uma opção para quem busca mobilidade, conforto e som imersivo nas partidas.', reviewSummary: 'As avaliações destacam a boa qualidade de som e o conforto do ajuste. A conexão sem fio e a autonomia também são citadas como pontos positivos para jogos competitivos.', rating: '4,9', reviewCount: '10.387', commentCount: '4.987', available: true },
@@ -46,9 +48,43 @@ function loadEnv(file) {
     .map((line) => [line.slice(0, line.indexOf('=')).trim(), line.slice(line.indexOf('=') + 1).trim()]));
 }
 
+function clientAcceptsEncoding(value, encoding) {
+  return String(value || '').split(',').some((entry) => {
+    const [name, ...params] = entry.trim().toLowerCase().split(';').map((part) => part.trim());
+    return name === encoding && !params.some((param) => /^q=0(?:\.0+)?$/.test(param));
+  });
+}
+
+function isCompressibleContent(contentType) {
+  return /^(?:text\/|application\/(?:json|javascript|xml)|image\/svg\+xml)/i.test(String(contentType || ''));
+}
+
+function withVaryHeader(headers, value) {
+  const previous = String(headers.Vary || headers.vary || '').split(',').map((part) => part.trim()).filter(Boolean);
+  if (!previous.some((part) => part.toLowerCase() === value.toLowerCase())) previous.push(value);
+  return previous.join(', ');
+}
+
 function send(response, status, body, contentType = 'application/json; charset=utf-8', headers = {}) {
-  response.writeHead(status, { 'Content-Type': contentType, 'Cache-Control': 'no-store', ...headers });
-  response.end(body);
+  const responseHeaders = { 'Content-Type': contentType, 'Cache-Control': 'no-store', ...headers };
+  let payload = body;
+  const canCompress = status !== 204 && !responseHeaders['Content-Encoding'] && isCompressibleContent(contentType);
+
+  if (canCompress) {
+    responseHeaders.Vary = withVaryHeader(responseHeaders, 'Accept-Encoding');
+    const source = Buffer.isBuffer(body) ? body : Buffer.from(String(body), 'utf8');
+    const accepted = response.economizaiAcceptEncoding;
+    if (source.length >= 1024 && clientAcceptsEncoding(accepted, 'br')) {
+      payload = brotliCompressSync(source, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 4 } });
+      responseHeaders['Content-Encoding'] = 'br';
+    } else if (source.length >= 1024 && clientAcceptsEncoding(accepted, 'gzip')) {
+      payload = gzipSync(source, { level: 6 });
+      responseHeaders['Content-Encoding'] = 'gzip';
+    }
+  }
+
+  response.writeHead(status, responseHeaders);
+  response.end(payload);
 }
 
 function sendJson(response, status, body, headers = {}) {
@@ -63,6 +99,11 @@ function getFullLogoBuffer() {
     ? Buffer.from(encoded, 'base64')
     : fs.readFileSync(path.join(siteDirectory, 'assets', 'logo-economizai.png'));
   return fullLogoBuffer;
+}
+
+function getFullLogoEtag() {
+  if (!fullLogoEtag) fullLogoEtag = `W/\"logo-${crypto.createHash('sha1').update(getFullLogoBuffer()).digest('hex').slice(0, 16)}\"`;
+  return fullLogoEtag;
 }
 
 function getCookie(request, name) {
@@ -716,8 +757,10 @@ function isValidUrl(value) {
 
 function normalizeManualOffer(data) {
   const currentPrice = Number(String(data.currentPrice).replace(',', '.'));
-  const originalPrice = data.originalPrice === '' || data.originalPrice == null
-    ? null : Number(String(data.originalPrice).replace(',', '.'));
+  const originalPriceInput = String(data.originalPrice ?? '').trim();
+  const parsedOriginalPrice = originalPriceInput === '' ? null : Number(originalPriceInput.replace(',', '.'));
+  // R$ 0,00 é tratado como campo ausente: alguns anúncios não exibem preço antigo.
+  const originalPrice = parsedOriginalPrice === 0 ? null : parsedOriginalPrice;
   if (!data.title?.trim()) throw new MercadoLivreError('Informe o título do produto.', 400);
   if (!Number.isFinite(currentPrice) || currentPrice <= 0) throw new MercadoLivreError('Informe um preço atual válido.', 400);
   if (originalPrice !== null && (!Number.isFinite(originalPrice) || originalPrice <= 0)) throw new MercadoLivreError('Informe um preço antigo válido ou deixe-o em branco.', 400);
@@ -753,6 +796,62 @@ function normalizeManualOffer(data) {
 function isPublicOffer(offer) {
   const status = offer.availabilityStatus || (offer.available === false ? 'unavailable' : 'available');
   return status === 'available';
+}
+
+function offerSubcategory(offer) {
+  if (offer.subcategory) return String(offer.subcategory);
+  const title = String(offer.title || '').toLocaleLowerCase('pt-BR');
+  const rules = [['headset', 'Headset'], ['microfone', 'Microfone'], ['teclado', 'Teclado'], ['mouse', 'Mouse'], ['ssd', 'SSD'], ['notebook', 'Notebook'], ['impressora', 'Impressora'], ['smartphone', 'Smartphone'], ['celular', 'Smartphone'], ['tablet', 'Tablet'], ['console', 'Console'], ['cadeira gamer', 'Cadeira gamer'], ['lenço', 'Higiene'], ['fralda', 'Fraldas']];
+  return rules.find(([term]) => title.includes(term))?.[1] || '';
+}
+
+function queryNumber(value) {
+  if (value == null || value === '') return null;
+  const number = Number(String(value).replace(',', '.'));
+  return Number.isFinite(number) ? number : null;
+}
+
+async function getPublicOffersPage(params) {
+  const page = Math.max(1, Math.floor(queryNumber(params.get('page')) || 1));
+  const limit = Math.min(24, Math.max(1, Math.floor(queryNumber(params.get('limit')) || 12)));
+  const category = String(params.get('category') || 'all');
+  const subcategory = String(params.get('subcategory') || '');
+  const marketplace = String(params.get('marketplace') || 'all');
+  const discount = String(params.get('discount') || 'all');
+  const search = String(params.get('search') || '').trim().toLocaleLowerCase('pt-BR');
+  const minPrice = queryNumber(params.get('minPrice'));
+  const maxPrice = queryNumber(params.get('maxPrice'));
+  const minRating = queryNumber(params.get('minRating')) || 0;
+  const sort = params.get('sort') === 'asc' || params.get('sort') === 'desc' ? params.get('sort') : '';
+
+  let offers = (await getAllOffers()).filter(isPublicOffer).filter((offer) => {
+    const currentPrice = Number(offer.currentPrice) || 0;
+    const discountPct = Number(offer.discountPct) || 0;
+    const rating = Number(String(offer.rating || '0').replace(',', '.')) || 0;
+    const offerCategory = String(offer.category || 'outros');
+    const matchesDiscount = discount === 'all'
+      || (discount === 'up-to-30' && discountPct <= 30)
+      || (discount === '30-to-50' && discountPct > 30 && discountPct <= 50)
+      || (discount === 'above-50' && discountPct > 50);
+    const searchable = `${offer.title || ''} ${offerCategory} ${offerSubcategory(offer)}`.toLocaleLowerCase('pt-BR');
+    return matchesDiscount
+      && (category === 'all' || offerCategory === category)
+      && (!subcategory || offerSubcategory(offer) === subcategory)
+      && (marketplace === 'all' || offer.marketplace === marketplace)
+      && (!search || searchable.includes(search))
+      && (minPrice == null || currentPrice >= minPrice)
+      && (maxPrice == null || currentPrice <= maxPrice)
+      && (!minRating || rating >= minRating);
+  });
+  if (sort) offers = offers.sort((first, second) => (sort === 'asc' ? 1 : -1) * ((Number(first.currentPrice) || 0) - (Number(second.currentPrice) || 0)));
+  const total = offers.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const safePage = Math.min(page, totalPages);
+  return {
+    items: offers.slice((safePage - 1) * limit, safePage * limit),
+    maxDiscount: Math.max(0, ...offers.map((offer) => Number(offer.discountPct) || 0)),
+    pagination: { page: safePage, limit, total, totalPages },
+  };
 }
 
 async function saveOffer(offer, priceSource = 'painel') {
@@ -859,7 +958,7 @@ function readBody(request) {
 }
 
 function contentType(file) {
-  return ({ '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml' })[path.extname(file).toLowerCase()] || 'application/octet-stream';
+  return ({ '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' })[path.extname(file).toLowerCase()] || 'application/octet-stream';
 }
 
 function absolutePublicUrl(value, origin) {
@@ -911,17 +1010,31 @@ async function createSitemap(origin) {
   return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map((loc) => `<url><loc>${escapeXml(loc)}</loc></url>`).join('')}</urlset>`;
 }
 
-async function sendStatic(response, pathname, searchParams, origin) {
+async function sendStatic(request, response, pathname, searchParams, origin) {
   const rawRequested = pathname === '/' ? '/index.html' : decodeURIComponent(pathname);
   const requested = legacyAssetPaths[rawRequested] || rawRequested;
   const file = path.resolve(siteDirectory, `.${requested}`);
   if (!file.startsWith(siteDirectory + path.sep) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return false;
   const type = contentType(file);
+  const fileInfo = fs.statSync(file);
+  const isStaticAsset = !type.startsWith('text/html');
+  const etag = `W/\"${fileInfo.size.toString(16)}-${Math.floor(fileInfo.mtimeMs).toString(16)}\"`;
+  const cacheHeaders = isStaticAsset
+    ? { 'Cache-Control': 'public, max-age=600, must-revalidate', ETag: etag, Vary: 'Accept-Encoding' }
+    : { 'Cache-Control': 'no-store' };
+  if (isStaticAsset && String(request.headers['if-none-match'] || '') === etag) {
+    response.writeHead(304, cacheHeaders);
+    response.end();
+    return true;
+  }
   let body = fs.readFileSync(file);
   // O cabeçalho comum também é aplicado às páginas antigas e a páginas HTML
   // futuras, mesmo se alguém esquecer de incluir o script manualmente.
   if (type.startsWith('text/html')) {
     let html = body.toString('utf8');
+    // A logo principal era enviada codificada dentro do HTML (quase 87 KB a
+    // mais em toda abertura). Servi-la como arquivo separado permite cache.
+    html = html.replace(/(<img\s+class="hero-logo"\s+src=)"data:image\/png;base64,[^"]+"/i, '$1"/assets/logo-economizai-completo.png"');
     const seoMetadata = await getProductSeoMetadata(requested, searchParams, origin);
     if (seoMetadata) html = injectSeoMetadata(html, seoMetadata);
     if (!/<link\s[^>]*rel=["'](?:shortcut\s+)?icon["']/i.test(html)) {
@@ -967,14 +1080,21 @@ async function sendStatic(response, pathname, searchParams, origin) {
     }
     body = Buffer.from(html, 'utf8');
   }
-  send(response, 200, body, type);
+  send(response, 200, body, type, cacheHeaders);
   return true;
 }
 
 const server = http.createServer(async (request, response) => {
+  response.economizaiAcceptEncoding = request.headers['accept-encoding'];
   const url = new URL(request.url, `http://${request.headers.host}`);
   if (request.method === 'GET' && url.pathname === '/assets/logo-economizai-completo.png') {
-    return send(response, 200, getFullLogoBuffer(), 'image/png');
+    const etag = getFullLogoEtag();
+    const headers = { 'Cache-Control': 'public, max-age=600, must-revalidate', ETag: etag, Vary: 'Accept-Encoding' };
+    if (String(request.headers['if-none-match'] || '') === etag) {
+      response.writeHead(304, headers);
+      return response.end();
+    }
+    return send(response, 200, getFullLogoBuffer(), 'image/png', headers);
   }
   try {
     await databaseReady;
@@ -1218,7 +1338,10 @@ const server = http.createServer(async (request, response) => {
       await supabaseRest('site_events', { method: 'POST', prefer: 'return=minimal', body: [{ event_type: eventType, session_id: sessionId, page_path: pagePath, offer_external_id: offerId, category_slug: category }] });
       return sendJson(response, 201, { ok: true });
     }
-    if (request.method === 'GET' && url.pathname === '/api/ofertas') return sendJson(response, 200, (await getAllOffers()).filter(isPublicOffer));
+    if (request.method === 'GET' && url.pathname === '/api/ofertas') {
+      if (url.searchParams.get('paginated') === '1') return sendJson(response, 200, await getPublicOffersPage(url.searchParams));
+      return sendJson(response, 200, (await getAllOffers()).filter(isPublicOffer));
+    }
 
     const publicOfferMatch = url.pathname.match(/^\/api\/ofertas\/([^/]+)$/);
     if (request.method === 'GET' && publicOfferMatch) {
@@ -1415,7 +1538,7 @@ const server = http.createServer(async (request, response) => {
       return send(response, 200, await createSitemap(publicSiteOrigin(request)), 'application/xml; charset=utf-8');
     }
     if (url.pathname.startsWith('/api/')) return sendJson(response, 404, { message: 'Rota não encontrada.' });
-    if (await sendStatic(response, url.pathname, url.searchParams, publicSiteOrigin(request))) return;
+    if (await sendStatic(request, response, url.pathname, url.searchParams, publicSiteOrigin(request))) return;
     return send(response, 404, 'Não encontrado', 'text/plain; charset=utf-8');
   } catch (error) {
     if (error instanceof MercadoLivreError) console.warn(`Mercado Livre [${error.status}]: ${error.message}`);
