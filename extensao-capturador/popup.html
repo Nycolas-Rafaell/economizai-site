@@ -4,11 +4,10 @@
 <body>
   <main>
     <p class="eyebrow">ECONOMIZAÍ · CAPTURA RÁPIDA</p><h1>Adicionar produto</h1>
-    <p class="hint">Teste assistido: a extensão tenta encontrar o link gerado na janela oficial da Barra de Afiliados. Você continua no controle e pode preencher o campo manualmente.</p>
-    <label for="affiliateUrl">Seu link de afiliado <small>(será preenchido no painel)</small></label>
+    <p class="hint">A extensão gera o link na Barra de Afiliados e envia o produto ao Economizaí no mesmo clique. Se necessário, você ainda pode informar o link manualmente.</p>
+    <label for="affiliateUrl">Seu link de afiliado <small>(preenchido automaticamente)</small></label>
     <input id="affiliateUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://meli.la/...">
-    <button id="generateAffiliate" class="secondary" type="button">Gerar link na Barra de Afiliados</button>
     <details><summary>Configuração do painel</summary><label for="destination">Endereço do Economizaí</label><input id="destination" type="url" placeholder="http://localhost:3000"></details>
-    <button id="capture" type="button">Capturar e abrir rascunho →</button><p id="status" aria-live="polite"></p>
+    <button id="capture" type="button">Gerar link e adicionar produto →</button><p id="status" aria-live="polite"></p>
   </main><script src="popup.js"></script>
 </body></html>

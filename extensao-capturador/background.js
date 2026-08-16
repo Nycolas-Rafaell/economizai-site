@@ -5,7 +5,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   try {
     const destination = new URL(rawDestination);
     if (!['http:', 'https:'].includes(destination.protocol)) throw new Error('Endereço inválido.');
-    chrome.storage.local.set({ economizaiPendingCapture: { ...capture, capturedAt: new Date().toISOString() } }, () => {
+    chrome.storage.local.set({ economizaiPendingCapture: { ...capture, autoCreate: true, capturedAt: new Date().toISOString() } }, () => {
       // "cadastro=1" evita o redirecionamento normal do painel para a tela de análises.
       chrome.tabs.create({ url: `${destination.origin}/admin.html?cadastro=1&captura=1#cadastro` });
       sendResponse({ ok: true });

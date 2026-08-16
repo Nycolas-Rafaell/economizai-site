@@ -570,6 +570,47 @@ field('analyzeScreenshot').addEventListener('click', async (event) => {
 function manualData() { return { marketplace: field('manualMarketplace').value, title: field('manualTitle').value.trim(), image: field('manualImage').value.trim(), description: field('manualDescription').value.trim(), reviewSummary: field('manualReviewSummary').value.trim(), rating: field('manualRating').value.trim(), reviewCount: field('manualReviewCount').value.trim(), commentCount: field('manualCommentCount').value.trim(), currentPrice: field('manualCurrentPrice').value.trim(), originalPrice: field('manualOriginalPrice').value.trim(), publicUrl: field('manualPublicUrl').value.trim(), affiliateUrl: field('manualAffiliateUrl').value.trim(), category: field('manualCategory').value, subcategory: field('manualSubcategory').value, specifications: preservedSpecifications, available: field('manualAvailable').value === 'available', availabilityStatus: field('manualAvailable').value, freeShipping: false }; }
 manualForm.addEventListener('submit', (event) => { event.preventDefault(); submitOffer(manualForm, editingId ? `/api/admin/ofertas/${encodeURIComponent(editingId)}` : '/api/admin/ofertas/manual', manualData(), editingId ? 'Salvando alterações…' : 'Criando o card manualmente…', editingId ? 'PUT' : 'POST'); });
 
+async function createCapturedOfferAutomatically() {
+  const data = manualData();
+  const missing = [];
+  if (!data.title) missing.push('título');
+  if (!data.currentPrice) missing.push('preço atual');
+  if (!data.publicUrl) missing.push('link público');
+  if (!data.affiliateUrl) missing.push('link de afiliado');
+  if (missing.length) {
+    status.hidden = false;
+    status.className = 'status error';
+    status.textContent = `Não foi possível criar automaticamente: faltou ${missing.join(', ')}. Os dados capturados foram mantidos para você completar depois.`;
+    saveManualDraft();
+    return;
+  }
+
+  const button = field('manualSubmit');
+  button.disabled = true;
+  status.hidden = false;
+  status.className = 'status';
+  status.textContent = 'Criando card automaticamente como aguardando publicação…';
+  try {
+    const response = await fetch('/api/admin/ofertas/manual', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const offer = await readServerJson(response);
+    if (!response.ok) throw new Error(offer.message || 'Não foi possível criar o card automaticamente.');
+    clearManualDraft();
+    cancelEdit();
+    status.className = 'status success';
+    status.innerHTML = `Card criado automaticamente como <strong>Aguardando publicação</strong>: <strong>${offer.title}</strong>. Você pode revisá-lo depois em <a href="admin-cards.html" style="color:inherit">Cards cadastrados</a>.`;
+  } catch (error) {
+    status.className = 'status error';
+    status.textContent = `${error.message} Os dados foram mantidos neste formulário para evitar perda.`;
+    saveManualDraft();
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function cancelEdit() { editingId = null; preservedSpecifications = {}; clearManualDraft(); manualForm.reset(); field('manualAvailable').value = 'available'; renderProductTypes(); field('manualHeading').textContent = 'Modo manual'; field('manualSubmit').textContent = 'Criar card manualmente'; field('cancelEdit').hidden = true; }
 field('cancelEdit').addEventListener('click', cancelEdit);
 clearDraftButton.addEventListener('click', async () => {
@@ -675,6 +716,7 @@ function applyExtensionCapture(capture) {
     ? `Dados capturados. Categoria da ${marketplaceName}: ${capture.sourceCategory}. Revise a classificação antes de publicar.`
     : 'Dados capturados da página do produto. Revise as informações e publique quando estiver tudo correto.';
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (capture.autoCreate) createCapturedOfferAutomatically();
 }
 
 window.addEventListener('message', (event) => {
