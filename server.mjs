@@ -472,6 +472,16 @@ const analyticsCategoryNames = {
   bebes: 'Bebês e Crianças', 'saude-beleza': 'Saúde e Beleza', 'ferramentas-auto': 'Ferramentas e Auto',
   'moda-acessorios': 'Moda e Acessórios', 'esporte-lazer': 'Esporte e Lazer', 'pet-shop': 'Pet Shop',
   supermercado: 'Supermercado', 'livros-papelaria': 'Livros e Papelaria', outros: 'Outros',
+  'acessorios-veiculos': 'Acessórios para Veículos', agro: 'Agro', 'alimentos-bebidas': 'Alimentos e Bebidas',
+  'antiguidades-colecoes': 'Antiguidades e Coleções', 'arte-papelaria-armarinho': 'Arte, Papelaria e Armarinho',
+  'beleza-cuidados': 'Beleza e Cuidado Pessoal', 'brinquedos-hobbies': 'Brinquedos e Hobbies', moda: 'Calçados, Roupas e Bolsas',
+  'cameras-acessorios': 'Câmeras e Acessórios', veiculos: 'Carros, Motos e Outros', 'casa-moveis': 'Casa, Móveis e Decoração',
+  'celulares-telefones': 'Celulares e Telefones', construcao: 'Construção', eletrodomesticos: 'Eletrodomésticos',
+  'eletronicos-audio-video': 'Eletrônicos, Áudio e Vídeo', 'esportes-fitness': 'Esportes e Fitness', ferramentas: 'Ferramentas',
+  'festas-lembrancinhas': 'Festas e Lembrancinhas', imoveis: 'Imóveis', 'industria-comercio': 'Indústria e Comércio',
+  ingressos: 'Ingressos', 'instrumentos-musicais': 'Instrumentos Musicais', 'joias-relogios': 'Joias e Relógios',
+  'livros-revistas-comics': 'Livros, Revistas e Comics', 'musica-filmes-seriados': 'Música, Filmes e Seriados',
+  saude: 'Saúde', servicos: 'Serviços',
 };
 
 function normalizeAnalyticsValue(value, max = 120) {
@@ -755,6 +765,31 @@ function isValidUrl(value) {
   try { new URL(value); return true; } catch { return false; }
 }
 
+function normalizeDiscountPercent(value) {
+  const match = String(value ?? '').replace(',', '.').match(/\d+(?:\.\d+)?/);
+  const percentage = match ? Number(match[0]) : 0;
+  return Number.isFinite(percentage) && percentage > 0 && percentage < 100 ? Math.round(percentage) : 0;
+}
+
+// Alguns fluxos externos usam nomes curtos ou antigos. No banco e no site,
+// mantemos somente os slugs oficiais definidos no catálogo de categorias.
+const categoryImportAliases = {
+  brinquedos: 'brinquedos-hobbies',
+  'brinquedos-e-hobbies': 'brinquedos-hobbies',
+  'casa-e-moveis': 'casa-moveis',
+  'casa-moveis-decoracao': 'casa-moveis',
+  'beleza-e-cuidado-pessoal': 'beleza-cuidados',
+  'esportes-e-fitness': 'esportes-fitness',
+  'calçados-roupas-e-bolsas': 'moda',
+};
+
+function normalizeCategorySlug(value) {
+  const slug = String(value || 'outros')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'outros';
+  return categoryImportAliases[slug] || slug;
+}
+
 function normalizeManualOffer(data) {
   const currentPrice = Number(String(data.currentPrice).replace(',', '.'));
   const originalPriceInput = String(data.originalPrice ?? '').trim();
@@ -769,13 +804,17 @@ function normalizeManualOffer(data) {
   const specifications = Object.fromEntries(Object.entries(data.specifications || {})
     .slice(0, 8).map(([name, value]) => [String(name).slice(0, 60), String(value || '').trim().slice(0, 180)])
     .filter(([name, value]) => name && value));
-  const discountPct = originalPrice && originalPrice > currentPrice ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) : 0;
+  // Preferimos o cálculo pelos preços. Quando a origem não traz preço antigo
+  // confiável, preservamos o desconto que veio no card da planilha.
+  const calculatedDiscount = originalPrice && originalPrice > currentPrice
+    ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) : 0;
+  const discountPct = calculatedDiscount || normalizeDiscountPercent(data.discountPct);
   const availabilityStatus = ['available', 'unavailable', 'pending'].includes(data.availabilityStatus)
     ? data.availabilityStatus : (data.available === false ? 'unavailable' : 'available');
   return {
     id: `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     marketplace: data.marketplace === 'shopee' ? 'shopee' : 'mercado_livre',
-    category: String(data.category || 'outros').toLowerCase(),
+    category: normalizeCategorySlug(data.category),
     title: data.title.trim(), image: data.image?.trim() || null,
     currentPrice, originalPrice, discountPct, currency: 'BRL',
     freeShipping: Boolean(data.freeShipping), publicUrl: data.publicUrl.trim(),
@@ -785,6 +824,8 @@ function normalizeManualOffer(data) {
     rating: String(data.rating || '').trim(),
     reviewCount: String(data.reviewCount || '').trim(),
     commentCount: String(data.commentCount || '').trim(),
+    quantitySold: String(data.quantitySold || '').trim().slice(0, 80),
+    coupon: String(data.coupon || '').trim().slice(0, 180),
     subcategory: String(data.subcategory || '').trim().slice(0, 80),
     specifications,
     available: availabilityStatus === 'available',
@@ -955,6 +996,195 @@ function readBody(request) {
     request.on('end', () => { try { resolve(JSON.parse(body || '{}')); } catch { reject(new Error('Dados inválidos.')); } });
     request.on('error', reject);
   });
+}
+
+function hasAutomationAccess(request) {
+  const expected = String(config.AUTOMATION_SECRET || '').trim();
+  const provided = String(request.headers['x-automation-secret'] || '').trim();
+  if (!expected || !provided) return false;
+  const expectedBytes = Buffer.from(expected);
+  const providedBytes = Buffer.from(provided);
+  return expectedBytes.length === providedBytes.length && crypto.timingSafeEqual(expectedBytes, providedBytes);
+}
+
+function offerFromAutomationRow(row) {
+  const offer = normalizeManualOffer({
+    title: row.nome ?? row.title,
+    image: row.imagem ?? row.image ?? '',
+    publicUrl: row.url_limpa ?? row.url_original ?? row.publicUrl,
+    affiliateUrl: row.link_afiliado ?? row.affiliateUrl,
+    currentPrice: row.preco_atual ?? row.currentPrice,
+    originalPrice: row.preco_original ?? row.originalPrice ?? '',
+    discountPct: row.desconto ?? row.discountPct ?? '',
+    category: row.categoria ?? row.category ?? 'outros',
+    subcategory: row.subcategoria ?? row.subcategory ?? '',
+    marketplace: row.loja ?? row.marketplace ?? 'mercado_livre',
+    rating: row.nota ?? row.rating ?? '',
+    reviewCount: row.quantidade_avaliacoes ?? row.reviewCount ?? '',
+    commentCount: row.quantidade_comentarios ?? row.commentCount ?? '',
+    quantitySold: row.quantidade_vendidas ?? row.quantitySold ?? '',
+    coupon: row.cupom ?? row.coupon ?? '',
+    description: row.descricao ?? row.description ?? '',
+    reviewSummary: row.resumo_avaliacoes ?? row.reviewSummary ?? '',
+    // O fluxo pode enviar "available" para publicar imediatamente ou "pending"
+    // para deixar o card criado aguardando publicação no painel.
+    availabilityStatus: row.status_site === 'available' ? 'available' : 'pending',
+  });
+  const externalProductId = externalProductIdFromRow(row);
+  if (externalProductId) {
+    offer.id = `import-${offer.marketplace}-${externalProductId}`;
+    offer.externalProductId = externalProductId;
+  }
+  return offer;
+}
+
+function externalProductIdFromRow(row) {
+  const rawUrl = String(row?.url_original || row?.publicUrl || row?.url_limpa || '');
+  const wid = rawUrl.match(/[?&#]wid=(MLB\d{6,})/i)?.[1];
+  if (wid) return wid.toUpperCase();
+  const itemId = rawUrl.match(/[?&#]item_id=(MLB\d{6,})/i)?.[1];
+  if (itemId) return itemId.toUpperCase();
+  const listedId = String(row?.id_produto || '').match(/^MLB\d{6,}$/i)?.[0];
+  if (listedId) return listedId.toUpperCase();
+  const pathId = rawUrl.match(/\/(?:p|up)\/(MLBU?\d{6,})/i)?.[1];
+  return pathId ? pathId.toUpperCase() : '';
+}
+
+function importRowIdentity(row) {
+  const marketplace = String(row?.loja || row?.marketplace || 'mercado_livre').toLowerCase();
+  const externalProductId = externalProductIdFromRow(row);
+  if (externalProductId) return `${marketplace}:${externalProductId}`;
+  const publicUrl = String(row?.url_original || row?.url_limpa || row?.publicUrl || '').trim().toLowerCase();
+  return `${marketplace}:${publicUrl}`;
+}
+
+function betterText(current, candidate) {
+  const currentText = String(current || '').trim();
+  const candidateText = String(candidate || '').trim();
+  if (!currentText) return candidateText;
+  if (!candidateText) return currentText;
+  return candidateText.length > currentText.length ? candidateText : currentText;
+}
+
+function importPriceNumber(value) {
+  const text = String(value ?? '').replace(/[^\d,.-]/g, '').trim();
+  if (!text) return 0;
+  if (text.includes(',') && text.includes('.')) return Number(text.replace(/\./g, '').replace(',', '.')) || 0;
+  return Number(text.replace(',', '.')) || 0;
+}
+
+function mergeImportRows(rows) {
+  const groups = new Map();
+  rows.forEach((row, index) => {
+    const identity = importRowIdentity(row);
+    const group = groups.get(identity) || { row: { ...row }, indexes: [] };
+    group.indexes.push(index);
+    if (group.indexes.length > 1) {
+      const base = group.row;
+      const incoming = row;
+      for (const field of ['nome', 'imagem', 'link_afiliado', 'nota', 'quantidade_vendidas', 'cupom', 'descricao', 'resumo_avaliacoes', 'subcategoria']) {
+        base[field] = betterText(base[field], incoming[field]);
+      }
+      if (importPriceNumber(incoming.preco_original) > importPriceNumber(base.preco_original)) base.preco_original = incoming.preco_original;
+      if (!importPriceNumber(base.preco_atual) && importPriceNumber(incoming.preco_atual)) base.preco_atual = incoming.preco_atual;
+      if ((!base.categoria || String(base.categoria).toLowerCase() === 'outros') && incoming.categoria) base.categoria = incoming.categoria;
+      if (String(incoming.status || '').toLowerCase() === 'pronto') base.status = 'pronto';
+    }
+    groups.set(identity, group);
+  });
+  return [...groups.values()];
+}
+
+// A identidade é usada somente para impedir que uma mesma oferta crie outro
+// card. O id interno do Economizaí continua sendo preservado normalmente.
+function offerProductIdentity(offer) {
+  const marketplace = String(offer.marketplace || 'mercado_livre').toLowerCase();
+  if (offer.externalProductId) return `${marketplace}:${String(offer.externalProductId).toUpperCase()}`;
+  const urlValue = String(offer.publicUrl || '');
+  const wid = urlValue.match(/[?&#]wid=(MLB\d{6,})/i)?.[1];
+  if (wid) return `${marketplace}:${wid.toUpperCase()}`;
+  const mlId = urlValue.match(/\bMLB-?(\d+)\b/i)?.[1];
+  if (mlId) return `${marketplace}:MLB${mlId}`;
+  const shopeeId = urlValue.match(/\.i\.(\d+)\.(\d+)/i);
+  if (shopeeId) return `${marketplace}:shopee-${shopeeId[1]}-${shopeeId[2]}`;
+  try {
+    const parsed = new URL(urlValue);
+    return `${marketplace}:${parsed.hostname.toLowerCase()}${(parsed.pathname.replace(/\/+$/, '') || '/')}`;
+  } catch {
+    return `${marketplace}:${urlValue.trim().toLowerCase()}`;
+  }
+}
+
+function findDuplicateOffer(offer, existingOffers, excludedOfferId = '') {
+  const identity = offerProductIdentity(offer);
+  return existingOffers.find((savedOffer) => (
+    String(savedOffer.id) !== String(excludedOfferId)
+    && offerProductIdentity(savedOffer) === identity
+  )) || null;
+}
+
+function mergeOfferWithImportedData(existing, incoming) {
+  const merged = { ...existing };
+  for (const field of ['title', 'image', 'affiliateUrl', 'rating', 'reviewCount', 'commentCount', 'quantitySold', 'coupon', 'description', 'reviewSummary', 'subcategory', 'externalProductId']) {
+    merged[field] = betterText(existing[field], incoming[field]);
+  }
+  if ((!existing.category || String(existing.category).toLowerCase() === 'outros') && incoming.category) merged.category = incoming.category;
+  if (!importPriceNumber(existing.currentPrice) && importPriceNumber(incoming.currentPrice)) merged.currentPrice = incoming.currentPrice;
+  if (importPriceNumber(incoming.originalPrice) > importPriceNumber(existing.originalPrice)) merged.originalPrice = incoming.originalPrice;
+  if (!Number(existing.discountPct) && Number(incoming.discountPct)) merged.discountPct = incoming.discountPct;
+  return merged;
+}
+
+// Itens vindos da automação com preço atual acima do preço antigo são
+// necessariamente inválidos para uma oferta com desconto. Limitamos a busca
+// aos cards importados para jamais apagar um cadastro manual por engano.
+function importedOffersWithInvertedPrices(offers) {
+  return offers.filter((offer) => (
+    String(offer.id || '').startsWith('import-')
+    && importPriceNumber(offer.originalPrice) > 0
+    && importPriceNumber(offer.currentPrice) > importPriceNumber(offer.originalPrice)
+  ));
+}
+
+async function importOffersWithDuplicateProtection(rows, priceSource, transformRow = (row) => row) {
+  const knownOffers = await getAllOffers();
+  const imported = [];
+  const rejected = [];
+  const results = [];
+
+  for (const group of mergeImportRows(rows)) {
+    const rawRow = group.row;
+    const row = transformRow(rawRow);
+    const line = group.indexes[0] + 2;
+    try {
+      const offer = offerFromAutomationRow(row);
+      const duplicate = findDuplicateOffer(offer, [...knownOffers, ...imported]);
+      if (duplicate) {
+        const consolidated = mergeOfferWithImportedData(duplicate, offer);
+        await saveOffer(consolidated, priceSource);
+        const message = 'Produto já existia no catálogo e foi unificado com os dados disponíveis da planilha.';
+        for (const index of group.indexes) {
+          const itemLine = index + 2;
+          results.push({ index: itemLine, status: 'merged', nome: consolidated.title || offer.title, message, reason: 'duplicate' });
+        }
+        continue;
+      }
+      const saved = await saveOffer(offer, priceSource);
+      imported.push(saved);
+      results.push({ index: line, status: 'created', nome: saved.title || offer.title, message: 'Card criado com sucesso.' });
+      for (const index of group.indexes.slice(1)) {
+        results.push({ index: index + 2, status: 'merged', nome: saved.title || offer.title, message: 'Linha unificada com outra ocorrência do mesmo produto.' });
+      }
+    } catch (error) {
+      const message = error.message || 'Produto inválido.';
+      for (const index of group.indexes) {
+        const itemLine = index + 2;
+        rejected.push({ index: itemLine, nome: rawRow?.nome || rawRow?.title || '', message, reason: 'invalid' });
+        results.push({ index: itemLine, status: 'rejected', nome: rawRow?.nome || rawRow?.title || '', message, reason: 'invalid' });
+      }
+    }
+  }
+  return { imported, rejected, results };
 }
 
 function contentType(file) {
@@ -1295,7 +1525,7 @@ const server = http.createServer(async (request, response) => {
       return sendJson(response, 200, { ok: true, avatarUrl });
     }
 
-    if (request.method === 'GET' && ['/admin.html', '/admin-cards.html', '/reportes.html', '/analytics.html', '/admin-users.html'].includes(url.pathname)) {
+    if (request.method === 'GET' && ['/admin.html', '/admin-cards.html', '/admin-import.html', '/reportes.html', '/analytics.html', '/admin-users.html'].includes(url.pathname)) {
       const authentication = await requireAdmin(request);
       if (!authentication.ok) {
         response.writeHead(302, { Location: '/login.html', 'Cache-Control': 'no-store' });
@@ -1325,6 +1555,23 @@ const server = http.createServer(async (request, response) => {
       if (!adminAuthentication.ok) return sendJson(response, adminAuthentication.status, { message: adminAuthentication.message });
     }
     if (databaseStartupError && url.pathname.startsWith('/api/')) return sendJson(response, 503, { message: 'Não foi possível conectar ao banco Supabase. Confira SUPABASE_URL e SUPABASE_SECRET_KEY no arquivo .env.' });
+    if (request.method === 'POST' && url.pathname === '/api/automation/ofertas/importar') {
+      if (!hasAutomationAccess(request)) return sendJson(response, 401, { message: 'Automação não autorizada.' });
+      const body = await readBody(request);
+      const rows = Array.isArray(body.offers) ? body.offers : (Array.isArray(body.rows) ? body.rows : [body]);
+      if (!rows.length || rows.length > 250) return sendJson(response, 400, { message: 'Envie entre 1 e 250 ofertas por requisição.' });
+
+      const result = await importOffersWithDuplicateProtection(rows, 'automacao');
+      return sendJson(response, result.rejected.length ? 207 : 201, { ok: true, imported: result.imported.length, rejected: result.rejected, results: result.results, offers: result.imported });
+    }
+    if (request.method === 'POST' && url.pathname === '/api/admin/importar-planilha') {
+      const body = await readBody(request);
+      const rows = Array.isArray(body.rows) ? body.rows : [];
+      if (!rows.length || rows.length > 250) return sendJson(response, 400, { message: 'Envie entre 1 e 250 linhas da planilha.' });
+      const publishNow = body.publishNow === true;
+      const result = await importOffersWithDuplicateProtection(rows, 'importacao-planilha', (row) => ({ ...row, status_site: publishNow ? 'available' : 'pending' }));
+      return sendJson(response, result.rejected.length ? 207 : 201, { ok: true, imported: result.imported.length, rejected: result.rejected, results: result.results, offers: result.imported });
+    }
     if (request.method === 'POST' && url.pathname === '/api/analytics/event') {
       const body = await readBody(request);
       const eventType = normalizeAnalyticsValue(body.eventType, 30);
@@ -1361,6 +1608,50 @@ const server = http.createServer(async (request, response) => {
       if (!existingOffer) return sendJson(response, 404, { message: 'Card não encontrado.' });
       const updatedOffer = await saveOffer({ ...existingOffer, available: status === 'available', availabilityStatus: status, updatedAt: new Date().toISOString() });
       return sendJson(response, 200, updatedOffer);
+    }
+
+    if (request.method === 'PATCH' && url.pathname === '/api/admin/ofertas/status-em-lote') {
+      const body = await readBody(request);
+      const fromStatus = String(body.fromStatus || '');
+      const status = String(body.status || '');
+      const limit = Math.floor(Number(body.limit));
+      const validStatuses = ['available', 'pending', 'unavailable'];
+      if (!validStatuses.includes(fromStatus) || !validStatuses.includes(status) || fromStatus === status || !Number.isInteger(limit) || limit < 1 || limit > 250) {
+        return sendJson(response, 400, { message: 'Status de origem ou destino inválido.' });
+      }
+      const matchingOffers = (await getAllOffers())
+        .filter((offer) => (offer.availabilityStatus || (offer.available === false ? 'unavailable' : 'available')) === fromStatus)
+        .slice(0, limit);
+      for (const offer of matchingOffers) {
+        await saveOffer({ ...offer, available: status === 'available', availabilityStatus: status, updatedAt: new Date().toISOString() });
+      }
+      return sendJson(response, 200, { ok: true, updated: matchingOffers.length, fromStatus, status });
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/admin/ofertas/precos-invertidos') {
+      const invalidOffers = importedOffersWithInvertedPrices(await getAllOffers());
+      return sendJson(response, 200, {
+        count: invalidOffers.length,
+        offers: invalidOffers.map((offer) => ({ id: offer.id, title: offer.title, currentPrice: offer.currentPrice, originalPrice: offer.originalPrice })),
+      });
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/admin/ofertas/remover-precos-invertidos') {
+      const invalidOffers = importedOffersWithInvertedPrices(await getAllOffers());
+      let deleted = 0;
+      for (const offer of invalidOffers) {
+        if (supabaseStore.enabled) {
+          deleted += await supabaseStore.deleteOffer(offer.id);
+        } else {
+          const savedOffers = readOffers();
+          const remainingOffers = savedOffers.filter((savedOffer) => savedOffer.id !== offer.id);
+          if (remainingOffers.length !== savedOffers.length) {
+            writeOffers(remainingOffers);
+            deleted += 1;
+          }
+        }
+      }
+      return sendJson(response, 200, { ok: true, deleted, scanned: invalidOffers.length });
     }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/usuarios') {
@@ -1492,11 +1783,13 @@ const server = http.createServer(async (request, response) => {
       }
       if (!Number.isFinite(Number(item.price))) return sendJson(response, 422, { message: 'O item não possui um preço válido para criar o card.' });
       const offer = normalizeOffer(item, publicUrl, affiliateUrl, String(category || 'outros').toLowerCase());
+      if (findDuplicateOffer(offer, await getAllOffers())) return sendJson(response, 409, { message: 'Este produto já possui um card cadastrado.' });
       return sendJson(response, 201, await saveOffer(offer));
     }
 
     if (request.method === 'POST' && url.pathname === '/api/admin/ofertas/manual') {
       const offer = normalizeManualOffer(await readBody(request));
+      if (findDuplicateOffer(offer, await getAllOffers())) return sendJson(response, 409, { message: 'Este produto já possui um card cadastrado.' });
       return sendJson(response, 201, await saveOffer(offer));
     }
 

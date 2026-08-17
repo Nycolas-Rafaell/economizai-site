@@ -59,7 +59,7 @@ export function createSupabaseOfferStore(config) {
     const rows = await request(`${table}?select=id&slug=eq.${encodeURIComponent(slug)}&limit=1`);
     if (!rows?.[0]?.id) {
       const help = table === 'categories'
-        ? ' Execute a migração database/migrations/SUPABASE-CATEGORIAS-CATALOGO.sql no SQL Editor do Supabase.'
+        ? ' Execute as migrações database/migrations/SUPABASE-CATEGORIAS-CATALOGO.sql e database/migrations/SUPABASE-CATEGORIAS-PDF.sql no SQL Editor do Supabase.'
         : '';
       throw new Error(`Supabase: ${table} não contém o registro “${slug}”.${help}`);
     }
@@ -94,6 +94,8 @@ export function createSupabaseOfferStore(config) {
         rating: asNumber(String(offer.rating || '').replace(',', '.')),
         review_count: Number(String(offer.reviewCount || '0').replace(/\D/g, '')) || 0,
         comment_count: Number(String(offer.commentCount || '0').replace(/\D/g, '')) || 0,
+        quantity_sold: offer.quantitySold || null,
+        coupon_text: offer.coupon || null,
         category_id: categoryId,
         subcategory_id: subcategoryId,
         is_published: offer.available !== false,
@@ -222,6 +224,8 @@ export function createSupabaseOfferStore(config) {
         rating: product.rating == null ? '' : String(product.rating).replace('.', ','),
         reviewCount: product.review_count ? String(product.review_count) : '',
         commentCount: product.comment_count ? String(product.comment_count) : '',
+        quantitySold: product.quantity_sold || '',
+        coupon: product.coupon_text || '',
         available: availabilityStatus === 'available',
         availabilityStatus,
         createdAt: item.created_at,

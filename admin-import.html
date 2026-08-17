@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Importar planilha | Economizaí</title>
+  <link rel="stylesheet" href="institutional.css"><link rel="stylesheet" href="admin-ui.css">
+  <style>
+    .import-page{max-width:1180px;margin:0 auto;padding:34px 24px 80px}.import-box{padding:26px;border:1px solid #303030;border-radius:14px;background:#171717}.import-box h2{margin:0;color:#ffc42d;font:800 21px Sora,Inter,system-ui}.import-box p{color:#b9b9b9;line-height:1.55}.file-drop{display:grid;place-items:center;min-height:150px;margin:20px 0;border:1px dashed #765f19;border-radius:12px;background:#15130d;text-align:center}.file-drop strong{color:#ffd15a}.file-drop input{max-width:280px;margin-top:13px;color:#ddd}.import-options{display:flex;align-items:center;gap:10px;margin:18px 0;color:#ddd;font-size:14px}.import-options input{accent-color:#ffc42d}.import-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.import-actions button{min-height:44px;border:1px solid #ffc42d;border-radius:9px;background:#ffc42d;color:#111;padding:0 16px;font:800 14px Inter,system-ui;cursor:pointer}.import-actions button:disabled{opacity:.55;cursor:not-allowed}.import-status{margin:18px 0 0;padding:12px;border:1px solid #303030;border-radius:9px;background:#121212;color:#c7c7c7;white-space:pre-line}.import-status.success{border-color:#2d774d;color:#9ae8b7}.import-status.error{border-color:#8f4541;color:#ffaaa4}.preview{max-height:560px;margin-top:20px;overflow:auto;border:1px solid #303030;border-radius:10px}.preview table{width:100%;border-collapse:collapse;font-size:12px}.preview th,.preview td{padding:10px;border-bottom:1px solid #292929;text-align:left}.preview th{position:sticky;top:0;background:#202020;color:#ffd15a}.preview td{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ddd}.preview tr.import-row-created,.preview tr.import-row-merged{background:#102217}.preview tr.import-row-rejected{background:#251414}.import-result{display:inline-block;padding:4px 7px;border:1px solid #3b3b3b;border-radius:999px;font-size:11px;font-weight:800}.import-result.created,.import-result.merged{border-color:#3c9961;background:#123220;color:#9ae8b7}.import-result.rejected{border-color:#a04945;background:#321a1a;color:#ffaaa4}.import-result.waiting{color:#c7c7c7}@media(max-width:600px){.import-page{padding:24px 16px 55px}.import-box{padding:18px}}
+  </style>
+</head>
+<body>
+  <main class="import-page admin-page">
+    <header class="admin-topbar"><div><p class="admin-kicker">Economizaí · catálogo</p><h1>Importar produtos da planilha</h1><p class="lead">Crie cards em lote no banco de dados usando a aba <strong>Produtos</strong> já preenchida.</p></div><a class="back" href="analytics.html">← Voltar ao painel</a></header>
+    <nav class="admin-nav" aria-label="Atalhos do catálogo"><a href="admin.html?cadastro=1#cadastro"><b>＋</b> Nova oferta</a><a href="admin-cards.html"><b>▦</b> Cards cadastrados</a><a href="analytics.html"><b>▥</b> Análises</a><a href="reportes.html"><b>✦</b> Atendimento</a><a href="admin-users.html"><b>♙</b> Usuários</a><a href="index.html"><b>↗</b> Ver site</a></nav>
+    <section class="import-box">
+      <h2>Arquivo da aba Produtos</h2>
+      <p>No Google Sheets, abra a aba <strong>Produtos</strong> e use <strong>Arquivo → Fazer download → Valores separados por vírgulas (.csv)</strong>. Serão importadas apenas linhas com <code>status</code> igual a <code>pronto</code> e um <code>link_afiliado</code> válido.</p>
+      <label class="file-drop"><span><strong>Selecione o CSV exportado</strong><br><small>Nenhum produto é criado antes da confirmação abaixo.</small><br><input id="csvFile" type="file" accept=".csv,text/csv"></span></label>
+      <label class="import-options"><input id="publishNow" type="checkbox"> Publicar os cards imediatamente no site</label>
+      <div class="import-actions"><button id="importButton" type="button" disabled>Importar cards prontos</button><span id="count"></span></div>
+      <p class="import-status" id="status">Escolha o arquivo CSV para validar os produtos.</p>
+      <div class="preview" id="preview" hidden></div>
+    </section>
+  </main>
+  <script src="admin-import.js"></script>
+</body>
+</html>

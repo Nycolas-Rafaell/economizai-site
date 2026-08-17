@@ -559,7 +559,7 @@
       <a class="nav-btn nav-account" id="accountMenuLink" href="login.html">Entrar</a>
       <a class="nav-btn nav-account" id="adminMenuLink" href="analytics.html" hidden>Painel admin</a>
       <div class="profile-menu" id="profileMenu" hidden>
-        <button class="nav-btn profile-trigger" id="profileMenuButton" type="button" aria-haspopup="true" aria-expanded="false"><img class="nav-avatar" id="navAvatar" alt=""><span id="navUserName"></span>⌄</button>
+        <button class="nav-btn profile-trigger" id="profileMenuButton" type="button" aria-haspopup="true" aria-expanded="false" onclick="alternarMenuPerfil(event)"><img class="nav-avatar" id="navAvatar" alt=""><span id="navUserName"></span>⌄</button>
         <div class="profile-dropdown" id="profileDropdown" hidden><a href="conta.html">Minha conta</a><a href="favoritos.html">Meus favoritos</a><a href="alertas.html">Meus Alertas</a><button id="logoutMenuButton" type="button">Sair</button></div>
       </div>
     </div>
@@ -742,7 +742,19 @@
     <p class="copyright">© 2026 Economizaí. Todos os direitos reservados.</p>
   </footer>
 
+  <script src="category-catalog.js"></script>
   <script>
+    // A página inicial também usa o catálogo central, igual às demais páginas.
+    (function renderizarCategoriasDoCatalogo() {
+      const catalogo = window.ECONOMIZAI_CATEGORIES || [];
+      const painel = document.getElementById('sidePanel');
+      if (!catalogo.length || !painel) return;
+      const grupos = catalogo.map(({ id, label, subs }) => {
+        const links = (subs || []).map(([tipo, texto]) => `<a class="subcategory-link" href="#ofertas" data-subcategory="${tipo}">${texto}</a>`).join('');
+        return `<div class="category-group"><button class="category-toggle" type="button" aria-expanded="false">${label}</button><div class="subcategory-list"><a class="category-all" href="#ofertas" data-category="${id}">Ver tudo em ${label}</a>${links}</div></div>`;
+      }).join('');
+      painel.innerHTML = `<button class="side-panel-close" onclick="fecharPainelCategorias()" aria-label="Fechar">✕</button><h4>Categorias</h4><a href="#ofertas" data-category="all">Todas as ofertas</a>${grupos}<h4>Lojas</h4><a href="lojas.html?loja=shopee">Shopee</a><a href="lojas.html?loja=mercado_livre">Mercado Livre</a><a href="lojas.html?loja=amazon">Amazon</a>`;
+    })();
     // Mantém várias cópias do mesmo conteúdo em movimento. A metade final é
     // idêntica à primeira, permitindo reiniciar a animação sem faixa vazia.
     function prepararTickerContinuo() {
@@ -802,36 +814,56 @@
       if (e.key === 'Escape') fecharPainelCategorias();
     });
 
+    // O menu do perfil usa uma função direta no botão para continuar abrindo
+    // mesmo se outra parte da página principal terminar de carregar depois.
+    function alternarMenuPerfil(event) {
+      event?.stopPropagation();
+      const button = document.getElementById('profileMenuButton');
+      const dropdown = document.getElementById('profileDropdown');
+      if (!button || !dropdown) return;
+      const aberto = dropdown.hidden;
+      dropdown.hidden = !aberto;
+      button.setAttribute('aria-expanded', String(aberto));
+    }
+
+    document.addEventListener('click', (event) => {
+      const menu = document.getElementById('profileMenu');
+      const dropdown = document.getElementById('profileDropdown');
+      const button = document.getElementById('profileMenuButton');
+      if (menu && !menu.contains(event.target) && dropdown && button) {
+        dropdown.hidden = true;
+        button.setAttribute('aria-expanded', 'false');
+      }
+    });
+
     async function atualizarMenuDaConta() {
       try {
         const resposta = await fetch('/api/auth/session', { cache: 'no-store' });
         if (!resposta.ok) return;
         const sessao = await resposta.json();
-        document.getElementById('accountMenuLink').hidden = true;
-        document.getElementById('profileMenu').hidden = false;
-        document.getElementById('navAvatar').src = sessao.avatarUrl || `assets/avatars/${sessao.avatarId || 'avatar-1'}.png`;
-        document.getElementById('navUserName').textContent = sessao.displayName || sessao.name || sessao.email.split('@')[0];
-        document.getElementById('accountDrawerLink').href = 'conta.html';
-        document.getElementById('accountDrawerLink').textContent = 'Minha conta';
-        const profileMenuButton = document.getElementById('profileMenuButton');
-        const profileDropdown = document.getElementById('profileDropdown');
-        profileMenuButton.addEventListener('click', () => {
-          const open = profileDropdown.hidden;
-          profileDropdown.hidden = !open;
-          profileMenuButton.setAttribute('aria-expanded', String(open));
-        });
-        document.addEventListener('click', (event) => {
-          if (!document.getElementById('profileMenu').contains(event.target)) { profileDropdown.hidden = true; profileMenuButton.setAttribute('aria-expanded', 'false'); }
-        });
-        document.getElementById('logoutMenuButton').addEventListener('click', async () => {
+        const accountLink = document.getElementById('accountMenuLink');
+        const profile = document.getElementById('profileMenu');
+        const avatar = document.getElementById('navAvatar');
+        const name = document.getElementById('navUserName');
+        const drawerLink = document.getElementById('accountDrawerLink');
+        const adminLink = document.getElementById('adminMenuLink');
+        const adminDrawerLink = document.getElementById('adminDrawerLink');
+
+        if (accountLink) accountLink.hidden = true;
+        if (profile) profile.hidden = false;
+        if (avatar) avatar.src = sessao.avatarUrl || `assets/avatars/${sessao.avatarId || 'avatar-1'}.png`;
+        if (name) name.textContent = sessao.displayName || sessao.name || String(sessao.email || '').split('@')[0];
+        if (drawerLink) { drawerLink.href = 'conta.html'; drawerLink.textContent = 'Minha conta'; }
+        if (sessao.isAdmin === true) {
+          if (adminLink) adminLink.hidden = false;
+          if (adminDrawerLink) adminDrawerLink.hidden = false;
+        }
+
+        document.getElementById('logoutMenuButton')?.addEventListener('click', async () => {
           await fetch('/api/auth/logout', { method: 'POST' });
           window.location.reload();
         });
-        if (sessao.isAdmin) {
-          document.getElementById('adminMenuLink').hidden = false;
-          document.getElementById('adminDrawerLink').hidden = false;
-        }
-      } catch { /* visitante sem sessão: mantém o link Entrar */ }
+      } catch (error) { console.error('Não foi possível atualizar o menu da conta.', error); }
     }
     atualizarMenuDaConta();
 
@@ -878,7 +910,8 @@
       supermercado: ['Alimento', 'Bebida', 'Limpeza doméstica', 'Papelaria doméstica', 'Pet food'],
       'livros-papelaria': ['Livro', 'Papelaria', 'Arte', 'Instrumento musical', 'Colecionável'], outros: ['Outro'],
     };
-    const categoryLabels = { 'esporte-lazer': 'Esporte e Lazer', 'pet-shop': 'Pet Shop', supermercado: 'Supermercado', 'livros-papelaria': 'Livros e Papelaria' };
+    Object.assign(subcategoriasPorCategoria, Object.fromEntries((window.ECONOMIZAI_CATEGORIES || []).map(({ id, subs }) => [id, (subs || []).map(([type]) => type)])));
+    const categoryLabels = Object.fromEntries((window.ECONOMIZAI_CATEGORIES || []).map(({ id, label }) => [id, label]));
     const categoryFilter = document.getElementById('filterCategory');
     Object.entries(categoryLabels).forEach(([value, label]) => {
       if (!categoryFilter.querySelector(`option[value="${value}"]`)) {
@@ -886,7 +919,7 @@
       }
     });
 
-    function adicionarAvaliacaoAoCard(card, rating = card.dataset.rating, reviewCount = card.dataset.reviewCount) {
+    function adicionarAvaliacaoAoCard(card, rating = card.dataset.rating, quantitySold = card.dataset.quantitySold, reviewCount = card.dataset.reviewCount) {
       card.querySelector('.card-rating')?.remove();
       const titulo = card.querySelector('.card-title');
       if (!titulo) return;
@@ -897,8 +930,9 @@
         const estrela = document.createElement('span'); estrela.className = 'rating-star'; estrela.textContent = '★'; estrela.setAttribute('aria-hidden', 'true');
         const valor = document.createElement('strong'); valor.textContent = nota.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
         avaliacao.append(estrela, valor);
-        if (reviewCount) { const quantidade = document.createElement('span'); quantidade.className = 'rating-count'; quantidade.textContent = `(${reviewCount} avaliações)`; avaliacao.append(quantidade); }
-        avaliacao.setAttribute('aria-label', `Avaliação ${valor.textContent} de 5${reviewCount ? `, ${reviewCount} avaliações` : ''}`);
+        if (quantitySold) { const quantidade = document.createElement('span'); quantidade.className = 'rating-count'; const vendas = String(quantitySold).replace(/^\s*\|\s*/, '').trim(); quantidade.textContent = `👍 ${vendas}`; avaliacao.append(quantidade); }
+        else if (reviewCount) { const quantidade = document.createElement('span'); quantidade.className = 'rating-count'; quantidade.textContent = `(${reviewCount} avaliações)`; avaliacao.append(quantidade); }
+        avaliacao.setAttribute('aria-label', `Avaliação ${valor.textContent} de 5${quantitySold ? `, quantidade vendida: ${quantitySold}` : (reviewCount ? `, ${reviewCount} avaliações` : '')}`);
       } else {
         avaliacao.classList.add('is-unavailable');
         avaliacao.textContent = 'Avaliação não informada';
@@ -1243,6 +1277,14 @@
       return rules.find(([term]) => title.includes(term))?.[1] || '';
     }
 
+    function descontoDaOferta(oferta) {
+      const informado = Number(String(oferta.discountPct ?? '').replace(',', '.').match(/\d+(?:\.\d+)?/)?.[0]) || 0;
+      if (informado > 0 && informado < 100) return Math.round(informado);
+      const atual = Number(oferta.currentPrice);
+      const antigo = Number(oferta.originalPrice);
+      return antigo > atual && atual > 0 ? Math.round(((antigo - atual) / antigo) * 100) : 0;
+    }
+
     async function carregarCardsCadastrados() {
       const requisicaoAtual = ++requisicaoDeOfertas;
       ofertasCarregando = true;
@@ -1259,7 +1301,7 @@
         const ofertas = Array.isArray(payload) ? payload : (payload.items || []);
         paginacaoRemota = Array.isArray(payload) ? null : (payload.pagination || null);
         if (paginacaoRemota) paginaAtual = paginacaoRemota.page;
-        const maiorDesconto = Number(payload.maxDiscount) || Math.max(0, ...ofertas.map((oferta) => Number(oferta.discountPct) || 0));
+        const maiorDesconto = Math.max(Number(payload.maxDiscount) || 0, ...ofertas.map(descontoDaOferta));
         gradeOfertas.innerHTML = '';
         cardsOfertas = [];
         ofertas.forEach((oferta, indice) => {
@@ -1271,19 +1313,21 @@
           card.dataset.marketplace = oferta.marketplace || 'mercado_livre';
           card.dataset.rating = oferta.rating || '0';
           card.dataset.reviewCount = oferta.reviewCount || '';
+          card.dataset.quantitySold = oferta.quantitySold || '';
           card.dataset.available = String(oferta.available !== false);
           card.dataset.productUrl = `produto-dinamico.html?id=${encodeURIComponent(oferta.id)}`;
           card.setAttribute('role', 'link');
           card.tabIndex = 0;
           card.setAttribute('aria-label', `Abrir oferta de ${oferta.title}`);
-          const desconto = oferta.discountPct ? `<span class="discount-flag">-${oferta.discountPct}%</span>` : '';
+          const descontoPct = descontoDaOferta(oferta);
+          const desconto = descontoPct ? `<span class="discount-flag">-${descontoPct}%</span>` : '';
           const precoAnterior = oferta.originalPrice ? `<div class="price-old-row"><span class="price-old-label">De</span><span class="price-old">${formatarPreco(oferta.originalPrice)}</span></div>` : '';
           const loja = oferta.marketplace === 'shopee' ? 'Shopee' : 'Mercado Livre';
           const paginaProduto = escaparHtml(card.dataset.productUrl);
           card.innerHTML = `<div class="card-media">${oferta.image ? `<img src="${escaparHtml(oferta.image)}" alt="${escaparHtml(oferta.title)}" loading="lazy" decoding="async">` : 'Imagem não disponível'}${desconto}<span class="store-badge">${loja}</span></div><div class="card-body"><div class="card-title">${escaparHtml(oferta.title)}</div><div class="price-block">${precoAnterior}<div class="price-new-row"><span class="price-new-label">Por</span><span class="price-new">${formatarPreco(oferta.currentPrice)}</span></div></div><a class="card-cta" href="${paginaProduto}">Ver oferta</a></div>`;
-          adicionarAvaliacaoAoCard(card, oferta.rating, oferta.reviewCount);
+          adicionarAvaliacaoAoCard(card, oferta.rating, oferta.quantitySold, oferta.reviewCount);
           moverDescontoParaPreco(card);
-          adicionarSelosAoCard(card, oferta, maiorDesconto);
+          adicionarSelosAoCard(card, { ...oferta, discountPct: descontoPct }, maiorDesconto);
           indicarOfertaIndisponivel(card, oferta);
           card.querySelector('.card-media').append(criarBotaoFavorito(oferta.id));
           gradeOfertas.append(card);

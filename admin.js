@@ -105,7 +105,7 @@ refreshHint.textContent = 'O servidor também tenta atualizar cards do Mercado L
 manualForm.parentElement.insertBefore(refreshHint, manualForm);
 manualForm.parentElement.insertBefore(refreshOffersButton, refreshHint);
 
-const siteCategories = [
+const siteCategories = window.ECONOMIZAI_CATEGORIES?.map(({ id, label }) => [id, label]) || [
   ['perifericos', 'Periféricos'], ['hardware', 'Hardware'], ['informatica', 'Informática'],
   ['smartphones', 'Celulares e Tablets'], ['tvs-audio', 'TVs e Áudio'], ['games', 'Games'],
   ['casa-cozinha', 'Casa e Cozinha'], ['bebes', 'Bebês e Crianças'], ['saude-beleza', 'Saúde e Beleza'],
@@ -139,6 +139,7 @@ const productTypes = {
   'livros-papelaria': ['Livro', 'Papelaria', 'Arte', 'Instrumento musical', 'Colecionável'],
   outros: ['Outro'],
 };
+Object.assign(productTypes, Object.fromEntries((window.ECONOMIZAI_CATEGORIES || []).map(({ id, subs }) => [id, [...new Set((subs || []).map(([type]) => type))]])));
 const technicalPanel = document.createElement('section');
 technicalPanel.className = 'technical-panel';
 technicalPanel.innerHTML = '<label for="manualSubcategory">Tipo do produto</label><select id="manualSubcategory"></select>';

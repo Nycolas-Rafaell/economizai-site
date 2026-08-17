@@ -101,7 +101,11 @@
         const range = renderChart(Array.isArray(data.priceHistory) ? data.priceHistory : [], data.currentPrice);
         element('minHistory').textContent = money(range.min); element('maxHistory').textContent = money(range.max);
         if (data.originalPrice) { element('old').hidden = false; element('old').textContent = `De ${money(data.originalPrice)}`; }
-        if (data.discountPct) { element('discount').hidden = false; element('discount').textContent = `-${data.discountPct}%`; }
+        const informedDiscount = Number(String(data.discountPct ?? '').replace(',', '.').match(/\d+(?:\.\d+)?/)?.[0]) || 0;
+        const calculatedDiscount = Number(data.originalPrice) > Number(data.currentPrice) && Number(data.currentPrice) > 0
+          ? Math.round(((Number(data.originalPrice) - Number(data.currentPrice)) / Number(data.originalPrice)) * 100) : 0;
+        const discountPct = informedDiscount > 0 && informedDiscount < 100 ? Math.round(informedDiscount) : calculatedDiscount;
+        if (discountPct) { element('discount').hidden = false; element('discount').textContent = `-${discountPct}%`; }
         element('shipping').textContent = 'Confira frete, prazo e condições diretamente na loja. O valor pode variar conforme a localização.';
         element('buy').href = data.affiliateUrl;
         window.EconomizaiAnalytics?.track('offer_view', { offerId: data.id, category: data.category });
@@ -117,7 +121,7 @@
           element('description').after(technicalSpecs);
         }
         element('reviewSummary').textContent = data.reviewSummary || 'Ainda não há um resumo de avaliações cadastrado para este produto.';
-        const metrics = []; if (data.rating) metrics.push(`${data.rating} / 5 em avaliações`); if (data.reviewCount) metrics.push(`${data.reviewCount} avaliações`); if (data.commentCount) metrics.push(`${data.commentCount} comentários`);
+        const metrics = []; if (data.rating) metrics.push(`${data.rating} / 5 em avaliações`); if (data.quantitySold) metrics.push(`👍 ${String(data.quantitySold).replace(/^\s*\|\s*/, '').trim()}`); else if (data.reviewCount) metrics.push(`${data.reviewCount} avaliações`); if (data.commentCount) metrics.push(`${data.commentCount} comentários`); if (data.coupon) metrics.push(`Cupom: ${data.coupon}`);
         element('metrics').replaceChildren(...(metrics.length ? metrics : ['Dados de avaliações não cadastrados']).map((text) => { const badge = document.createElement('span'); badge.textContent = text; return badge; }));
         if (data.image) { const image = document.createElement('img'); image.src = data.image; image.alt = data.title; image.addEventListener('error', () => image.remove()); element('media').querySelector('span:not(.store)')?.remove(); element('media').append(image); }
         fetch(`/api/recent/${encodeURIComponent(data.id)}`, { method: 'POST' }).catch(() => {});

@@ -122,6 +122,42 @@
 .admin-offer-card .card-actions .delete { border-color: #8e3d39; background: #241717; color: #ff9c96; }
 .admin-offer-card .card-actions .delete:hover { border-color: #ef5a50; background: #3a1e1c; }
 
+.bulk-status-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0 4px;
+  padding: 13px 15px;
+  border: 1px solid #373737;
+  border-radius: 12px;
+  background: #151515;
+}
+
+.bulk-status-actions__label { margin-right: auto; color: #c9c9c9; font-size: 13px; font-weight: 700; }
+.bulk-status-actions__quantity { display: flex; align-items: center; gap: 7px; color: #c9c9c9; font-size: 12px; font-weight: 700; }
+.bulk-status-actions__quantity input { width: 68px; min-height: 36px; box-sizing: border-box; border: 1px solid #484848; border-radius: 8px; background: #0f0f0f; color: #fff; font: 800 13px Inter, system-ui; text-align: center; }
+.bulk-status-actions button {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #4b4b4b;
+  border-radius: 8px;
+  background: #242424;
+  color: #f2f2f2;
+  font: 800 12px Inter, system-ui;
+  cursor: pointer;
+}
+.bulk-status-actions button:hover:not(:disabled) { filter: brightness(1.16); }
+.bulk-status-actions button:disabled { cursor: wait; opacity: .65; }
+.bulk-status-actions [data-bulk-status="available"] { border-color: #278c58; color: #9aebbb; }
+.bulk-status-actions [data-bulk-status="pending"] { border-color: #9b7617; color: #ffdb70; }
+.bulk-status-actions [data-bulk-status="unavailable"] { border-color: #a73f3a; color: #ffaaa4; }
+
+.catalog-tools { display: flex; align-items: center; gap: 10px; }
+.scan-prices { min-height: 38px; padding: 8px 12px; border: 1px solid #a73f3a; border-radius: 8px; background: #241717; color: #ffaaa4; font: 800 12px Inter, system-ui; cursor: pointer; white-space: nowrap; }
+.scan-prices:hover:not(:disabled) { border-color: #ef5a50; background: #3a1e1c; }
+.scan-prices:disabled { cursor: wait; opacity: .65; }
+
 @media (max-width: 960px) {
   .cards-page .list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -132,4 +168,10 @@
   .admin-card-body { min-height: 0; }
   .admin-card-title { min-height: 0; }
   .admin-offer-card .quick-status button { font-size:11px; }
+  .bulk-status-actions { align-items: stretch; }
+  .bulk-status-actions__label { width: 100%; }
+  .bulk-status-actions__quantity { width: 100%; }
+  .bulk-status-actions button { flex: 1 1 150px; }
+  .catalog-tools { width: 100%; flex-wrap: wrap; }
+  .scan-prices, .catalog-tools input { flex: 1 1 100%; }
 }

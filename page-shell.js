@@ -1,7 +1,7 @@
 // Cabeçalho e rodapé comuns. Novas páginas devem usar <header data-site-header></header>
 // e <footer data-site-footer></footer> para receber a navegação automaticamente.
 const socialLinks = { YouTube: 'https://www.youtube.com/@reiwo', Instagram: 'https://www.instagram.com/reiwooficial/', Twitch: 'https://www.twitch.tv/reiwooficial', TikTok: 'https://www.tiktok.com/@reiwooficial_' };
-const categoryGroups = [
+let categoryGroups = window.ECONOMIZAI_CATEGORIES || [
   { id: 'games', label: 'Games', subs: [['Console', 'Consoles'], ['Jogo', 'Jogos'], ['Controle', 'Controles'], ['Cadeira gamer', 'Cadeiras gamer'], ['Acessório gamer', 'Acessórios gamer']] },
   { id: 'hardware', label: 'Hardware', subs: [['SSD', 'SSD e armazenamento'], ['Memória RAM', 'Memórias RAM'], ['Placa de vídeo', 'Placas de vídeo'], ['Processador', 'Processadores'], ['Placa-mãe', 'Placas-mãe'], ['Fonte', 'Fontes']] },
   { id: 'informatica', label: 'Informática', subs: [['Notebook', 'Notebooks'], ['Computador', 'Computadores'], ['Impressora', 'Impressoras'], ['Câmera', 'Câmeras'], ['Rede', 'Redes e conectividade']] },
@@ -66,8 +66,26 @@ if (header) {
     trigger.querySelector('img').src = session.avatarUrl || `assets/avatars/${session.avatarId || 'avatar-1'}.png`;
     trigger.querySelector('span').textContent = session.displayName || session.name || session.email.split('@')[0];
     if (session.isAdmin) header.querySelector('.admin-link').hidden = false;
-    trigger.addEventListener('click', () => { dropdown.hidden = !dropdown.hidden; trigger.setAttribute('aria-expanded', String(!dropdown.hidden)); });
+    trigger.addEventListener('click', () => {
+      dropdown.hidden = !dropdown.hidden;
+      trigger.setAttribute('aria-expanded', String(!dropdown.hidden));
+    });
     document.addEventListener('click', (event) => { if (!profile.contains(event.target)) { dropdown.hidden = true; trigger.setAttribute('aria-expanded', 'false'); } });
     dropdown.querySelector('button').addEventListener('click', async () => { await fetch('/api/auth/logout', { method: 'POST' }); window.location.assign('index.html'); });
   }).catch(() => {});
+}
+
+// Compatibilidade para páginas antigas: carrega o catálogo central mesmo quando
+// a página só incluía page-shell.js. Assim toda a navegação permanece unificada.
+if (!window.ECONOMIZAI_CATEGORIES) {
+  const catalogScript = document.createElement('script');
+  catalogScript.src = 'category-catalog.js';
+  catalogScript.onload = () => {
+    categoryGroups = window.ECONOMIZAI_CATEGORIES || categoryGroups;
+    const drawer = document.getElementById('siteMenu');
+    if (drawer) {
+      drawer.innerHTML = `<button class="drawer-close" onclick="toggleMenu()" aria-label="Fechar">×</button><h2>Categorias</h2>${categoryMenu()}<h3>Links</h3><a href="lojas.html">Ofertas por loja</a><a href="contato.html">Contato</a>${links(socialLinks)}`;
+    }
+  };
+  document.head.append(catalogScript);
 }

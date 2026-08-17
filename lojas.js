@@ -13,6 +13,14 @@ const escapeHtml = (value) => String(value || '').replace(/[&<>'"]/g, (character
 const money = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value) || 0);
 const storeLabel = (value) => storeNames[value] || String(value || 'Outra loja').replace(/_/g, ' ');
 
+function discountOf(offer) {
+  const supplied = Number(String(offer.discountPct ?? '').replace(',', '.').match(/\d+(?:\.\d+)?/)?.[0]) || 0;
+  if (supplied > 0 && supplied < 100) return Math.round(supplied);
+  const current = Number(offer.currentPrice);
+  const original = Number(offer.originalPrice);
+  return original > current && current > 0 ? Math.round(((original - current) / original) * 100) : 0;
+}
+
 function renderTabs() {
   const countFor = (id) => id === 'all' ? offers.length : offers.filter((offer) => offer.marketplace === id).length;
   document.getElementById('storeTabs').innerHTML = stores.map((store) => `<button class="store-tab${store.id === selectedStore ? ' active' : ''}" type="button" data-store="${store.id}"><span class="store-mark">${store.mark}</span><span>${store.label}</span><span class="store-count">${countFor(store.id)}</span></button>`).join('');
@@ -36,8 +44,9 @@ function toggleFavorite(button, offerId) {
 function makeCard(offer) {
   const card = document.createElement('article'); card.className = `offer-card${offer.available === false ? ' unavailable' : ''}`;
   const old = offer.originalPrice ? `<div class="old-price">De ${money(offer.originalPrice)}</div>` : '<div class="old-price"></div>';
-  const rating = offer.rating ? `<strong>★ ${escapeHtml(offer.rating)}</strong>${offer.reviewCount ? ` (${escapeHtml(offer.reviewCount)} avaliações)` : ''}` : 'Avaliação não informada';
-  const discount = offer.discountPct ? `<span class="discount">-${escapeHtml(offer.discountPct)}% OFF</span>` : '';
+  const rating = offer.rating ? `<strong>★ ${escapeHtml(offer.rating)}</strong>${offer.quantitySold ? ` <span>👍 ${escapeHtml(String(offer.quantitySold).replace(/^\s*\|\s*/, '').trim())}</span>` : (offer.reviewCount ? ` (${escapeHtml(offer.reviewCount)} avaliações)` : '')}` : 'Avaliação não informada';
+  const discountPct = discountOf(offer);
+  const discount = discountPct ? `<span class="discount">-${escapeHtml(discountPct)}% OFF</span>` : '';
   card.innerHTML = `<div class="offer-media">${offer.image ? `<img src="${escapeHtml(offer.image)}" alt="${escapeHtml(offer.title)}">` : ''}<span class="store-badge">${escapeHtml(storeLabel(offer.marketplace))}</span><button class="favorite${favoriteIds.has(offer.id) ? ' active' : ''}" type="button" aria-label="Favoritar ${escapeHtml(offer.title)}">${favoriteIds.has(offer.id) ? '★' : '☆'}</button></div><div class="offer-body"><h3 class="offer-title">${escapeHtml(offer.title)}</h3><div class="rating">${rating}</div>${old}<div class="price-line"><span class="current-price">${money(offer.currentPrice)}</span>${discount}</div><a class="offer-link" href="produto-dinamico.html?id=${encodeURIComponent(offer.id)}">Ver oferta</a></div>`;
   toggleFavorite(card.querySelector('.favorite'), offer.id); return card;
 }
