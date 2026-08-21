@@ -1,0 +1,931 @@
+{
+  "name": "PROCURAR PRODUTOS MERCADO LIVRE — V2.2.1 (EMBARALHAMENTO GLOBAL)",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1UktXqbUGulQpuPL-o-BvumTTyjC5mQ_sz0UbIcI3oUs",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 570183729,
+          "mode": "list",
+          "cachedResultName": "Categoria",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UktXqbUGulQpuPL-o-BvumTTyjC5mQ_sz0UbIcI3oUs/edit#gid=570183729"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1088,
+        1744
+      ],
+      "id": "906bfdc2-8180-4839-8b13-13e0394d058e",
+      "name": "LISTAR CATEGORIAS",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "W6Vaunbh7ucQO8tw",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "config"
+        },
+        "where": {
+          "values": [
+            {
+              "column": "chave",
+              "value": "mercadolivre_cookie"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        864,
+        1744
+      ],
+      "id": "9df3fd85-8842-4ad4-9468-bd2897167695",
+      "name": "COOKIES",
+      "credentials": {
+        "postgres": {
+          "id": "WX1vaG8dieEPSmDK",
+          "name": "Postgres account"
+        }
+      },
+      "notes": "Lê o cookie salvo na tabela config do Supabase (chave='mercadolivre_cookie')."
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        640,
+        1744
+      ],
+      "id": "412cfacd-68b1-482a-8223-3deba82ae0c2",
+      "name": "TODO DIA AS 7"
+    },
+    {
+      "parameters": {
+        "content": "# PROCURA OS PRODUTOS BASEADO NAS CATEGORIAS ATIVAS",
+        "height": 608,
+        "width": 3424,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        544,
+        1424
+      ],
+      "id": "bae29f97-70f3-4b1e-af0a-ced49a321685",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const decodeHtml = (value) => String(value || '')\n  .replace(/&amp;/gi, '&')\n  .replace(/&nbsp;|&#160;/gi, ' ')\n  .replace(/&quot;/gi, '\"')\n  .replace(/&#39;|&apos;/gi, \"'\")\n  .replace(/&lt;/gi, '<')\n  .replace(/&gt;/gi, '>');\n\nconst clean = (value) => decodeHtml(value)\n  .replace(/<[^>]+>/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\n// Impede que o Google Sheets interprete conteúdo capturado como fórmula.\nconst sheetSafe = (value) => {\n  if (value === null || value === undefined) return null;\n  const safe = String(value).replace(/^[=+\\-@]+\\s*/, '').trim();\n  return safe || null;\n};\n\nconst attr = (tag, name) => {\n  const escaped = name.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n  const match = String(tag || '').match(new RegExp(`\\\\b${escaped}\\\\s*=\\\\s*[\"']([^\"']*)[\"']`, 'i'));\n  return match ? decodeHtml(match[1]) : null;\n};\n\nconst hasClass = (tag, className) => String(attr(tag, 'class') || '')\n  .split(/\\s+/)\n  .includes(className);\n\nconst extractElement = (html, startIndex) => {\n  const source = String(html || '');\n  const openEnd = source.indexOf('>', startIndex);\n  if (openEnd < 0) return '';\n  const openTag = source.slice(startIndex, openEnd + 1);\n  const tagName = (openTag.match(/^<\\s*([a-z0-9-]+)/i) || [])[1];\n  if (!tagName) return '';\n  const matcher = new RegExp(`<\\\\/?${tagName}\\\\b[^>]*>`, 'gi');\n  matcher.lastIndex = startIndex;\n  let depth = 0;\n  let match;\n  while ((match = matcher.exec(source))) {\n    if (/^<\\//.test(match[0])) depth -= 1;\n    else if (!/\\/>$/.test(match[0])) depth += 1;\n    if (depth === 0) return source.slice(startIndex, matcher.lastIndex);\n  }\n  return source.slice(startIndex);\n};\n\nconst findElementByClass = (html, tagName, className) => {\n  const matcher = new RegExp(`<${tagName}\\\\b[^>]*>`, 'gi');\n  let match;\n  while ((match = matcher.exec(String(html || '')))) {\n    if (hasClass(match[0], className)) return extractElement(html, match.index);\n  }\n  return '';\n};\n\nconst parseAriaMoney = (label) => {\n  const match = String(label || '').match(/(\\d[\\d.]*)\\s*reais?(?:\\s+com\\s+(\\d{1,2})\\s*centavos?)?/i);\n  if (!match) return null;\n  const whole = match[1].replace(/\\./g, '');\n  const cents = match[2] ? match[2].padStart(2, '0') : '00';\n  const value = Number(`${whole}.${cents}`);\n  return Number.isFinite(value) && value > 0 ? value : null;\n};\n\nconst extractMoney = (block) => {\n  if (!block) return { texto: null, valor: null };\n  const moneyTag = (String(block).match(/<(?:span|s)\\b[^>]*data-andes-money-amount=[\"']true[\"'][^>]*>/i) || [])[0] || '';\n  const ariaValue = parseAriaMoney(attr(moneyTag, 'aria-label'));\n  const fraction = String(block).match(/data-andes-money-amount-fraction=[\"']true[\"'][^>]*>([^<]+)/i);\n  const cents = String(block).match(/data-andes-money-amount-cents=[\"']true[\"'][^>]*>([^<]+)/i);\n  const wholeDigits = fraction ? fraction[1].replace(/\\D/g, '') : '';\n  const centDigits = cents ? cents[1].replace(/\\D/g, '').padEnd(2, '0').slice(0, 2) : '00';\n  const spanValue = wholeDigits ? Number(`${wholeDigits}.${centDigits}`) : null;\n  const value = ariaValue || (Number.isFinite(spanValue) && spanValue > 0 ? spanValue : null);\n  return {\n    texto: value === null ? null : value.toFixed(2),\n    valor: value,\n  };\n};\n\nconst getProductId = (url) => {\n  const text = decodeHtml(url);\n  try {\n    const parsed = new URL(text);\n    const searchable = `${parsed.search}&${parsed.hash.replace(/^#/, '')}`;\n    const wid = searchable.match(/(?:^|[?&#])wid=(MLB\\d+)/i)?.[1];\n    if (wid) return wid.toUpperCase();\n    const itemId = searchable.match(/(?:^|[?&#])item_id=(MLB\\d+)/i)?.[1];\n    if (itemId) return itemId.toUpperCase();\n    const directItemId = parsed.pathname.match(/MLB-?(\\d{6,})/i)?.[1];\n    if (/produto\\.mercadolivre\\.com\\.br/i.test(parsed.hostname) && directItemId) return `MLB${directItemId}`;\n    const upId = parsed.pathname.match(/\\/up\\/(MLBU\\d+)/i)?.[1];\n    if (upId) return upId.toUpperCase();\n    const catalogId = parsed.pathname.match(/\\/p\\/(MLB\\d+)/i)?.[1];\n    if (catalogId) return catalogId.toUpperCase();\n  } catch (error) {}\n  const upFallback = text.match(/MLBU\\d+/i)?.[0];\n  if (upFallback) return upFallback.toUpperCase();\n  return text.match(/MLB-?(\\d{6,})/i)?.[1] ? `MLB${text.match(/MLB-?(\\d{6,})/i)[1]}` : '';\n};\n\nconst normalizeProductUrl = (url, productId) => {\n  const text = decodeHtml(url);\n  try {\n    const parsed = new URL(text);\n    const isCatalog = /\\/p\\/MLB\\d+/i.test(parsed.pathname);\n    const cleanUrl = `${parsed.origin}${parsed.pathname}`.replace(/\\/$/, '');\n    const searchable = `${parsed.search}&${parsed.hash.replace(/^#/, '')}`;\n    const actualWid = searchable.match(/(?:^|[?&#])wid=(MLB\\d+)/i)?.[1]?.toUpperCase();\n    return isCatalog && actualWid ? `${cleanUrl}?wid=${actualWid}` : cleanUrl;\n  } catch (error) {\n    return text.split('#')[0].split('?')[0];\n  }\n};\n\nconst parseSold = (cardText) => {\n  const match = String(cardText).match(/(?:mais\\s+de\\s+|\\+\\s*)?([\\d.,]+)\\s*(milh(?:ão|ões)|mil)?(?:\\s+produtos?)?\\s+vendidos/i);\n  if (!match) return { texto: null, numero: null };\n  let number = Number.parseFloat(match[1].replace(/\\./g, '').replace(',', '.'));\n  if (!Number.isFinite(number)) return { texto: null, numero: null };\n  const unit = (match[2] || '').toLowerCase();\n  if (unit === 'mil') number *= 1000;\n  if (unit.startsWith('milh')) number *= 1000000;\n  return { texto: sheetSafe(clean(match[0])), numero: Math.round(number) };\n};\n\nconst parseCoupon = (cardHtml) => {\n  const candidates = [];\n  const componentPattern = /<(?:div|span)\\b[^>]*class=[\"'][^\"']*(?:poly-component__rebates|poly-rebates__pill|coupon)[^\"']*[\"'][^>]*>/gi;\n  let match;\n  while ((match = componentPattern.exec(String(cardHtml || '')))) {\n    candidates.push(clean(extractElement(cardHtml, match.index)));\n  }\n  const text = candidates.join(' · ');\n  if (!/cupom/i.test(text)) return { cupom: null, cupomTipo: null, cupomValor: null };\n\n  let found = text.match(/compre\\s*R\\$\\s*([\\d.,]+)\\s*e\\s*ganhe\\s*R\\$\\s*([\\d.,]+)\\s*(?:OFF|de desconto)/i);\n  if (found) return { cupom: sheetSafe(clean(found[0])), cupomTipo: 'valor_minimo_valor_off', cupomValor: Number(found[2].replace(/\\./g, '').replace(',', '.')) };\n  found = text.match(/compre\\s*R\\$\\s*([\\d.,]+)\\s*e\\s*ganhe\\s*(\\d+(?:[.,]\\d+)?)\\s*%\\s*(?:OFF|de desconto)/i);\n  if (found) return { cupom: sheetSafe(clean(found[0])), cupomTipo: 'valor_minimo_percentual_off', cupomValor: Number(found[2].replace(',', '.')) };\n  found = text.match(/R\\$\\s*([\\d.,]+)\\s+com\\s+cupom(?:\\s+por\\s+seguir\\s+(?:a\\s+)?loja)?/i);\n  if (found) return { cupom: sheetSafe(clean(found[0])), cupomTipo: /seguir/i.test(found[0]) ? 'preco_por_seguir_loja' : 'preco_com_cupom', cupomValor: Number(found[1].replace(/\\./g, '').replace(',', '.')) };\n  found = text.match(/(\\d+(?:[.,]\\d+)?)\\s*%\\s*(?:OFF|de desconto)\\s+(?:com\\s+)?cupom/i);\n  if (found) return { cupom: sheetSafe(clean(found[0])), cupomTipo: 'percentual_off', cupomValor: Number(found[1].replace(',', '.')) };\n  found = text.match(/R\\$\\s*([\\d.,]+)\\s*(?:OFF|de desconto)\\s+(?:com\\s+)?cupom/i);\n  if (found) return { cupom: sheetSafe(clean(found[0])), cupomTipo: 'valor_off', cupomValor: Number(found[1].replace(/\\./g, '').replace(',', '.')) };\n  return { cupom: null, cupomTipo: null, cupomValor: null };\n};\n\nconst extractImage = (cardHtml) => {\n  const tags = String(cardHtml || '').match(/<img\\b[^>]*>/gi) || [];\n  const picture = tags.find((tag) => hasClass(tag, 'poly-component__picture')) || tags[0] || '';\n  const src = attr(picture, 'src');\n  if (src && /^https?:\\/\\//i.test(src)) return src;\n  const dataSrc = attr(picture, 'data-src');\n  if (dataSrc && /^https?:\\/\\//i.test(dataSrc)) return dataSrc;\n  const srcset = attr(picture, 'srcset');\n  if (!srcset) return null;\n  const choices = srcset.split(',').map((part) => {\n    const parsed = part.trim().match(/^(\\S+)\\s+(\\d+)w$/);\n    return parsed ? { url: parsed[1], width: Number(parsed[2]) } : null;\n  }).filter(Boolean).sort((a, b) => b.width - a.width);\n  return choices[0]?.url || null;\n};\n\nconst extractProducts = (html, grupoOferta) => {\n  const source = String(html || '');\n  const starts = [];\n  const divMatcher = /<div\\b[^>]*>/gi;\n  let match;\n  while ((match = divMatcher.exec(source))) {\n    if (hasClass(match[0], 'poly-card')) starts.push(match.index);\n  }\n\n  const products = [];\n  const seen = new Set();\n  for (let index = 0; index < starts.length; index += 1) {\n    const card = source.slice(starts[index], starts[index + 1] || source.length);\n    const titleAnchor = (card.match(/<a\\b[^>]*class=[\"'][^\"']*\\bpoly-component__title\\b[^\"']*[\"'][^>]*>[\\s\\S]*?<\\/a>/i) || [])[0] || '';\n    const openAnchor = (titleAnchor.match(/^<a\\b[^>]*>/i) || [])[0] || '';\n    const title = clean(titleAnchor);\n    const originalUrl = attr(openAnchor, 'href');\n    const productId = getProductId(originalUrl);\n    const currentBlock = findElementByClass(card, 'div', 'poly-price__current');\n    const currentAmount = findElementByClass(currentBlock, 'span', 'poly-price__amount') || currentBlock;\n    const current = extractMoney(currentAmount);\n    const previousBlock = findElementByClass(card, 's', 'andes-money-amount--previous');\n    const previous = extractMoney(previousBlock);\n    const discountMatch = clean(currentBlock).match(/(\\d+(?:[.,]\\d+)?)\\s*%\\s*OFF/i);\n    const calculatedDiscount = previous.valor && current.valor && previous.valor > current.valor\n      ? Math.floor((1 - current.valor / previous.valor) * 100)\n      : null;\n    const discount = discountMatch ? `${discountMatch[1].replace(',', '.')}% OFF` : (calculatedDiscount ? `${calculatedDiscount}% OFF` : null);\n    const cardText = clean(card);\n    const ratingMatch = cardText.match(/(?:classifica[cç][aã]o\\s*)?([0-5][.,]\\d)\\s*(?:de\\s*5\\s*estrelas|\\|)/i) || cardText.match(/\\b([0-5][.,]\\d)\\b(?=\\s*(?:\\||\\+|mais\\s+de))/i);\n    const ratingNumber = ratingMatch ? Number(ratingMatch[1].replace(',', '.')) : null;\n    const sold = parseSold(cardText);\n    const coupon = parseCoupon(card);\n    const imageUrl = extractImage(card);\n\n    if (!title || !originalUrl || !productId || !imageUrl || !current.valor) continue;\n    if (seen.has(productId)) continue;\n    seen.add(productId);\n\n    products.push({\n      nomeProduto: title,\n      imagemProduto: imageUrl,\n      urlOriginal: normalizeProductUrl(originalUrl, productId),\n      precoAtual: current.texto,\n      preco_atual_numero: current.valor,\n      precoOriginal: previous.valor && previous.valor > current.valor ? previous.texto : null,\n      preco_original_numero: previous.valor && previous.valor > current.valor ? previous.valor : null,\n      desconto: discount,\n      nota: ratingNumber === null ? null : String(ratingNumber).replace('.', ','),\n      notaNumero: ratingNumber,\n      quantidadeVendidas: sold.texto,\n      quantidadeVendidasNumero: sold.numero,\n      cupom: coupon.cupom,\n      cupomTipo: coupon.cupomTipo,\n      cupomValor: coupon.cupomValor,\n      grupoOferta,\n      idProduto: productId,\n      parserVersion: 'busca-ml-v2.1-polycard',\n    });\n  }\n  return products;\n};\n\nconst grupoOferta = $('DEFINE GRUPO').item.json.grupoOferta;\nconst output = [];\nfor (const [itemIndex, item] of $input.all().entries()) {\n  const json = item.json || {};\n  const html = json.data || json.body || json.html || '';\n  for (const product of extractProducts(html, grupoOferta)) {\n    output.push({ json: product, pairedItem: { item: itemIndex } });\n  }\n}\nif (output.length === 0) {\n  return [{\n    json: {\n      _semProdutos: true,\n      grupoOferta,\n      motivoCaptura: 'Nenhum poly-card válido encontrado nesta categoria',\n      parserVersion: 'busca-ml-v2.1-polycard',\n    },\n  }];\n}\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        1840
+      ],
+      "id": "2fad6712-90ae-40a8-9f9c-727715cc420c",
+      "name": "PAGINA COM POLYCARD"
+    },
+    {
+      "parameters": {
+        "jsCode": "const clean = (s) =>\n  (s || '')\n    .replace(/<[^>]+>/g, '')\n    .replace(/&amp;/g, '&')\n    .replace(/&nbsp;/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n\nconst toNumber = (priceText) => {\n  if (!priceText) return null;\n  const onlyDigits = priceText\n    .replace(/[^\\d,]/g, '')\n    .replace(',', '.');\n  const n = parseFloat(onlyDigits);\n  return Number.isFinite(n) ? n : null;\n};\n\n// evita que o Google Sheets interprete valores como formula\nconst sheetSafe = (value) => {\n  if (value === null || value === undefined) return null;\n  const cleaned = String(value).replace(/^[=+\\-@]+\\s*/, '').trim();\n  return cleaned || null;\n};\n\n// converte \"50mil vendidos\" / \"Mais de 2 milhões vendidos\" / \"300 vendidos\" em numero\nconst parseVendidosNumero = (texto) => {\n  if (!texto) return null;\n  const match = texto.match(/([\\d.,]+)\\s*(milh(?:ão|ões)|mil)?/i);\n  if (!match) return null;\n  let numero = parseFloat(match[1].replace(/\\./g, '').replace(',', '.'));\n  if (!Number.isFinite(numero)) return null;\n  const unidade = (match[2] || '').toLowerCase();\n  if (unidade === 'mil') numero *= 1000;\n  if (unidade.startsWith('milh')) numero *= 1000000;\n  return Math.round(numero);\n};\n\nconst grupoOferta = $('DEFINE GRUPO').item.json.grupoOferta;\n\n// mesma logica usada no PAGINA COM POLYCARD -- mantida aqui so por\n// consistencia de schema entre os dois parsers. No carrossel dinamico,\n// esses 3 campos normalmente vem vazios porque esse formato de widget\n// nao costuma exibir nota/vendas/cupom.\nconst extractExtras = (blockHtml) => {\n  const blockText = clean(blockHtml);\n\n  const notaMatch =\n    blockText.match(/\\b([0-5][.,]\\d)\\b(?=\\s*(?:\\||vendid))/i) ||\n    blockText.match(/\\b([0-5][.,]\\d)\\s*(?:estrelas?|de\\s*avalia)/i);\n  const nota = notaMatch ? notaMatch[1].replace('.', ',') : null;\n  const notaNumero = notaMatch ? parseFloat(notaMatch[1].replace(',', '.')) : null;\n\n  const vendidosMatch = blockText.match(\n    /((?:Mais de\\s+)?\\+?\\s*[\\d.,]+\\s*(?:milh(?:ão|ões)|mil)?\\s*vendidos)/i\n  );\n  const quantidadeVendidas = vendidosMatch\n    ? sheetSafe(vendidosMatch[1].replace(/^\\s*\\|\\s*/, '').trim())\n    : null;\n  const quantidadeVendidasNumero = quantidadeVendidas\n    ? parseVendidosNumero(quantidadeVendidas)\n    : null;\n\n  const couponMatch = blockText.match(\n    /(?:cupom[:\\s]*(?:R\\$\\s*[\\d.,]+|\\d+(?:[.,]\\d+)?\\s*%)(?:\\s*(?:OFF|de desconto))?|(?:R\\$\\s*[\\d.,]+|\\d+(?:[.,]\\d+)?\\s*%)(?:\\s*(?:OFF|de desconto))?\\s*(?:com|no)\\s*cupom)/i\n  );\n  const cupom = couponMatch ? sheetSafe(couponMatch[0].trim()) : null;\n\n  let cupomTipo = null;\n  let cupomValor = null;\n  if (cupom) {\n    const percMatch = cupom.match(/(\\d+(?:[.,]\\d+)?)\\s*%/);\n    const valorMatch = cupom.match(/R\\$\\s*([\\d.,]+)/);\n    if (percMatch) {\n      cupomTipo = 'percentual';\n      cupomValor = parseFloat(percMatch[1].replace(',', '.'));\n    } else if (valorMatch) {\n      cupomTipo = 'valor_fixo';\n      cupomValor = parseFloat(valorMatch[1].replace(/\\./g, '').replace(',', '.'));\n    }\n  }\n\n  return {\n    nota,\n    notaNumero,\n    quantidadeVendidas,\n    quantidadeVendidasNumero,\n    cupom,\n    cupomTipo,\n    cupomValor,\n  };\n};\n\nconst extractProducts = (html) => {\n  const products = [];\n  const seen = new Set();\n\n  const cardRegex =\n    /<div class=\"dynamic-carousel__item-container\">[\\s\\S]*?<h3 class=\"dynamic-carousel__title\">([\\s\\S]*?)<\\/h3>/g;\n\n  let match;\n  while ((match = cardRegex.exec(html)) !== null) {\n    const block = match[0];\n    const title = clean(match[1]);\n\n    const linkMatch = block.match(/<a class=\"splinter-link\"\\s+href=\"([^\"]+)\"/);\n    const productUrl = linkMatch ? linkMatch[1] : null;\n\n    const imgMatch = block.match(/<img[^>]*\\ssrc=\"([^\"]+)\"/);\n    const imageUrl = imgMatch ? imgMatch[1] : null;\n\n    const oldPriceMatch = block.match(\n      /<span\\s+class=\"dynamic-carousel__oldprice\">([^<]+)<\\/span>/\n    );\n    const originalPriceText = oldPriceMatch ? clean(oldPriceMatch[1]) : null;\n\n    const priceMatch = block.match(\n      /<span class=\"dynamic-carousel__price\">[\\s\\S]*?<span>([^<]+)<\\/span>(?:\\s*<sup class=\"dynamic-carousel__price-decimals\">([^<]+)<\\/sup>)?/\n    );\n    let currentPriceText = null;\n    if (priceMatch) {\n      const intPart = clean(priceMatch[1]);\n      const decimals = priceMatch[2] ? clean(priceMatch[2]) : null;\n      currentPriceText = decimals ? `${intPart},${decimals}` : intPart;\n    }\n\n    const discountMatch = block.match(\n      /<sup\\s+class=\"dynamic-carousel__discount\">([^<]+)<\\/sup>/\n    );\n    const discountText = discountMatch ? clean(discountMatch[1]) : null;\n\n    const dedupKey = `${title}|${currentPriceText}|${imageUrl}`;\n    if (seen.has(dedupKey)) continue;\n    seen.add(dedupKey);\n\n    const extras = extractExtras(block);\n\n    products.push({\n      nomeProduto: title,\n      imagemProduto: imageUrl,\n      urlOriginal: productUrl,\n      precoAtual: currentPriceText,\n      preco_atual_numero: toNumber(currentPriceText),\n      precoOriginal: originalPriceText,\n      preco_original_numero: toNumber(originalPriceText),\n      desconto: discountText,\n      nota: extras.nota,\n      notaNumero: extras.notaNumero,\n      quantidadeVendidas: extras.quantidadeVendidas,\n      quantidadeVendidasNumero: extras.quantidadeVendidasNumero,\n      cupom: extras.cupom,\n      cupomTipo: extras.cupomTipo,\n      cupomValor: extras.cupomValor,\n      grupoOferta\n    });\n  }\n\n  return products;\n};\n\nconst output = [];\n\nfor (const [itemIndex, item] of $input.all().entries()) {\n  const json = item.json || {};\n  const html = json.data || json.body || json.html || '';\n\n  for (const product of extractProducts(html)) {\n    output.push({\n      json: product,\n      pairedItem: { item: itemIndex },\n    });\n  }\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        1648
+      ],
+      "id": "d5114f23-af9b-4cd2-9825-7eba60010e02",
+      "name": "PAGINA COM DINAMYC CARROUSSEL"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e68e93cd-084c-45fe-bcf4-9aa1583e4287",
+              "leftValue": "={{ $json.data }}",
+              "rightValue": "dynamic-carousel__item-container",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "busca-ml-v2-prioriza-polycard",
+              "leftValue": "={{ $json.data }}",
+              "rightValue": "poly-card",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2208,
+        1744
+      ],
+      "id": "9365d7fb-fe5c-49e2-9feb-ef610867ed74",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        1552
+      ],
+      "id": "35067076-87c3-49c8-97a2-7fdae85ef6cf",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3776,
+        1824
+      ],
+      "id": "9b1a23a4-045a-4f8b-9ae5-20560e7594cd",
+      "name": "Wait1",
+      "webhookId": "22dd2a1d-4486-4386-9e37-7bf3241b2532"
+    },
+    {
+      "parameters": {
+        "type": "random"
+      },
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        1744
+      ],
+      "id": "38cdc262-e76c-491c-a372-16b62e2ef792",
+      "name": "MISTURAR"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1536,
+        1744
+      ],
+      "id": "7587b8f9-15a9-4aa2-8403-03210904b75a",
+      "name": "PERCORRE CATEGORIAS"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.URL }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "cookie",
+              "value": "={{ $('COOKIES').item.json.valor }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        1744
+      ],
+      "id": "302e4e60-9ce4-4c8e-841e-c47ca01312a6",
+      "name": "CARREGA HTML",
+      "retryOnFail": true,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3f378733-6b15-47df-a3a7-47b0208c159c",
+              "leftValue": "={{ $json.nomeProduto }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "6f7c46d4-5c74-4cd4-9b0b-9f8276654bef",
+              "leftValue": "={{ $json.imagemProduto }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "78570aa7-2f87-4f74-b83f-52929bcafc6b",
+              "leftValue": "={{ $json.precoAtual }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "77f916c7-d4b9-476d-a4c8-7761fab7b884",
+              "leftValue": "={{ $json.urlOriginal }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "ed435c15-d735-4859-b466-9a9c5bb43ba8",
+              "leftValue": "={{ $json.urlOriginal }}",
+              "rightValue": "click1.mercadolivre",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "514abb1b-b3d4-40c7-ae34-b6e6300342b9",
+              "leftValue": "={{ $json.urlOriginal }}",
+              "rightValue": "mercadolivre.com.br",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        2656,
+        1744
+      ],
+      "id": "f46b44f1-720d-430f-9ebc-a6427c05e155",
+      "name": "FILTRA INVALIDOS"
+    },
+    {
+      "parameters": {
+        "jsCode": "function converterPreco(valor) {\n  let texto = String(valor ?? '')\n    .replace(/R\\$/gi, '')\n    .replace(/\\s/g, '')\n    .trim();\n\n  if (!texto) return 0;\n\n  // Ex.: 146.70 — ponto é decimal\n  if (/^\\d+\\.\\d{1,2}$/.test(texto)) {\n    return Number(texto);\n  }\n\n  // Ex.: 146,70 — vírgula é decimal\n  if (/^\\d+,\\d{1,2}$/.test(texto)) {\n    return Number(texto.replace(',', '.'));\n  }\n\n  // Ex.: 1.299,90\n  if (/^\\d{1,3}(\\.\\d{3})+,\\d{1,2}$/.test(texto)) {\n    return Number(texto.replace(/\\./g, '').replace(',', '.'));\n  }\n\n  // Ex.: 1,299.90\n  if (/^\\d{1,3}(,\\d{3})+\\.\\d{1,2}$/.test(texto)) {\n    return Number(texto.replace(/,/g, ''));\n  }\n\n  // Ex.: 1.299 ou 1,299\n  if (/^\\d{1,3}([.,]\\d{3})+$/.test(texto)) {\n    return Number(texto.replace(/[.,]/g, ''));\n  }\n\n  return Number(texto.replace(',', '.')) || 0;\n}\n\nfunction obterIdProduto(url) {\n  const texto = String(url || '');\n\n  try {\n    const parsed = new URL(texto);\n\n    // O wid é o ID individual correto do anúncio (mais confiável que regex solto na URL).\n    const busca = `${parsed.search}${parsed.hash}`;\n    const wid = busca.match(/[?&#]wid=(MLB\\d+)/i)?.[1];\n    if (wid) return wid.toUpperCase();\n\n    const itemId = busca.match(/[?&#]item_id=(MLB\\d+)/i)?.[1];\n    if (itemId) return itemId.toUpperCase();\n\n    const idNaRota = parsed.pathname.match(/\\/(?:p|up)\\/(MLBU?\\d+)/i)?.[1];\n    if (idNaRota) return idNaRota.toUpperCase();\n  } catch (erro) {\n    // Cai pro fallback abaixo.\n  }\n\n  return texto.match(/MLB-?\\d+/i)?.[0]?.replace('-', '').toUpperCase() || '';\n}\n\nfunction formatarPreco(precoOriginal, precoAtual, desconto) {\n  return `${precoOriginal || ''}\\n${precoAtual || ''} ${desconto || ''}`;\n}\n\nconst output = [];\n\nfor (const item of $input.all()) {\n  const dados = item.json;\n\n  // Reaproveita o número já extraído pelos parsers (poly-card ou dynamic-carousel);\n  // se não tiver, faz o parse robusto em cima do texto (aceita R$, ponto ou vírgula decimal etc.).\n  const precoAtualNum = converterPreco(dados.preco_atual_numero ?? dados.precoAtual);\n  const precoOriginalBruto = converterPreco(dados.preco_original_numero ?? dados.precoOriginal);\n  const precoOriginalNum = precoOriginalBruto > precoAtualNum ? precoOriginalBruto : 0;\n\n  dados.precoAtual = precoAtualNum ? precoAtualNum.toFixed(2) : dados.precoAtual;\n  dados.precoOriginal = precoOriginalNum ? precoOriginalNum.toFixed(2) : '';\n  dados.preco = formatarPreco(dados.precoOriginal, dados.precoAtual, dados.desconto);\n  dados.idProduto = dados.idProduto || obterIdProduto(dados.urlOriginal) || 'SEM_ID';\n\n  output.push({ json: dados });\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        1744
+      ],
+      "id": "c8f5244c-9ddf-434e-a695-f027cd7fb4a4",
+      "name": "EXTRAIR PRODUCTID"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  const data = item.json || {};\n  const original = String(data.urlOriginal || '');\n  try {\n    const parsed = new URL(original);\n    const base = `${parsed.origin}${parsed.pathname}`.replace(/\\/$/, '');\n    const searchable = `${parsed.search}&${parsed.hash.replace(/^#/, '')}`;\n    const actualWid = searchable.match(/(?:^|[?&#])wid=(MLB\\d+)/i)?.[1]?.toUpperCase();\n    data.urlOriginal = /\\/p\\/MLB\\d+/i.test(parsed.pathname) && actualWid\n      ? `${base}?wid=${actualWid}`\n      : base;\n  } catch (error) {\n    data.urlOriginal = original.split('#')[0].split('?')[0];\n  }\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3328,
+        1744
+      ],
+      "id": "a5e03a59-11fa-491b-af4c-a71a2d7965af",
+      "name": "LIMPAR URL PRODUTO"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1UktXqbUGulQpuPL-o-BvumTTyjC5mQ_sz0UbIcI3oUs",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 996632064,
+          "mode": "list",
+          "cachedResultName": "Produtos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UktXqbUGulQpuPL-o-BvumTTyjC5mQ_sz0UbIcI3oUs/edit#gid=996632064"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "idProduto": "={{ $json.idProduto }}",
+            "Grupo": "={{ $json.grupoOferta }}",
+            "nomeProduto": "={{ $json.nomeProduto }}",
+            "imagemProduto": "={{ $json.imagemProduto }}",
+            "precoOriginal": "={{ $json.precoOriginal }}",
+            "precoAtual": "={{ $json.precoAtual }}",
+            "desconto": "={{ $json.desconto }}",
+            "precoFormatado": "={{ $json.preco }}",
+            "urlOriginal": "={{ $json.urlOriginal }}",
+            "status": "PENDENTE",
+            "quantidadeVendidas": "={{ $json.quantidadeVendidas }}",
+            "cupom": "={{ $json.cupom }}",
+            "notaNumero": "={{ $json.notaNumero }}",
+            "quantidadeVendidasNumero": "={{ $json.quantidadeVendidasNumero }}",
+            "cupomTipo": "={{ $json.cupomTipo }}",
+            "cupomValor": "={{ $json.cupomValor }}"
+          },
+          "matchingColumns": [
+            "idProduto"
+          ],
+          "schema": [
+            {
+              "id": "Grupo",
+              "displayName": "Grupo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "idProduto",
+              "displayName": "idProduto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nomeProduto",
+              "displayName": "nomeProduto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "imagemProduto",
+              "displayName": "imagemProduto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "precoAtual",
+              "displayName": "precoAtual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "precoOriginal",
+              "displayName": "precoOriginal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "desconto",
+              "displayName": "desconto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "precoFormatado",
+              "displayName": "precoFormatado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "urlOriginal",
+              "displayName": "urlOriginal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "urlAfiliado",
+              "displayName": "urlAfiliado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "success",
+              "displayName": "success",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notaNumero",
+              "displayName": "notaNumero",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "quantidadeVendidasNumero",
+              "displayName": "quantidadeVendidasNumero",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "cupomTipo",
+              "displayName": "cupomTipo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "cupomValor",
+              "displayName": "cupomValor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": " nota",
+              "displayName": " nota",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "quantidadeVendidas",
+              "displayName": "quantidadeVendidas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "cupom",
+              "displayName": "cupom",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3552,
+        1744
+      ],
+      "id": "b9d631fc-e2ee-41fd-a5f8-0ab4681ecb8f",
+      "name": "ARMAZENA PRODUTOS NA PLANILHA DE PRODUTOS",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "W6Vaunbh7ucQO8tw",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ed313e18-0385-41c5-afd4-858c20eafbfe",
+              "name": "data",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "4f25d828-dce5-494f-b247-12ca1c0d6b6d",
+              "name": "grupoOferta",
+              "value": "={{ $('PERCORRE CATEGORIAS').item.json.Grupo }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1984,
+        1744
+      ],
+      "id": "375f43a1-6eea-4818-9883-c388d32a9896",
+      "name": "DEFINE GRUPO"
+    },
+    {
+      "parameters": {
+        "jsCode": "const collector = $getWorkflowStaticData('global');\ncollector.produtosCapturados = [];\ncollector.categoriasProcessadas = 0;\ncollector.iniciadoEm = new Date().toISOString();\nreturn $input.all();"
+      },
+      "id": "7905bb3f-71f6-40f8-93f2-83598ba08a4f",
+      "name": "RESET COLETOR GLOBAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        1500
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const collector = $getWorkflowStaticData('global');\ncollector.produtosCapturados = Array.isArray(collector.produtosCapturados)\n  ? collector.produtosCapturados\n  : [];\n\nfor (const item of $input.all()) {\n  const product = item.json || {};\n  if (!product.idProduto || product.idProduto === 'SEM_ID') continue;\n  collector.produtosCapturados.push(JSON.parse(JSON.stringify(product)));\n}\n\ncollector.categoriasProcessadas = (collector.categoriasProcessadas || 0) + 1;\nreturn [{\n  json: {\n    categoriaColetada: true,\n    categoriasProcessadas: collector.categoriasProcessadas,\n    produtosAcumulados: collector.produtosCapturados.length,\n  },\n}];"
+      },
+      "id": "9b2e20ee-80d4-4394-adb4-b5ffc8ede26a",
+      "name": "COLETA PRODUTOS GLOBAL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        1280
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const collector = $getWorkflowStaticData('global');\nconst captured = Array.isArray(collector.produtosCapturados)\n  ? collector.produtosCapturados\n  : [];\n\n// Deduplicação final pelo identificador real antes de gravar na planilha.\nconst unique = new Map();\nfor (const product of captured) {\n  const id = String(product.idProduto || '').trim().toUpperCase();\n  if (!id || id === 'SEM_ID') continue;\n  if (!unique.has(id)) unique.set(id, { ...product, idProduto: id });\n}\n\n// Fisher–Yates: todos os produtos de todas as categorias são misturados juntos.\nconst products = [...unique.values()];\nfor (let index = products.length - 1; index > 0; index -= 1) {\n  const randomIndex = Math.floor(Math.random() * (index + 1));\n  [products[index], products[randomIndex]] = [products[randomIndex], products[index]];\n}\n\ncollector.totalAntesDeduplicacao = captured.length;\ncollector.totalDepoisDeduplicacao = products.length;\ncollector.produtosCapturados = [];\n\nreturn products.map((product) => ({ json: product }));"
+      },
+      "id": "6d87b99d-2e39-4dda-a2b5-20adfe55790d",
+      "name": "EMBARALHA TODOS OS PRODUTOS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        1080
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "LISTAR CATEGORIAS": {
+      "main": [
+        [
+          {
+            "node": "MISTURAR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "COOKIES": {
+      "main": [
+        [
+          {
+            "node": "LISTAR CATEGORIAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TODO DIA AS 7": {
+      "main": [
+        [
+          {
+            "node": "COOKIES",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PAGINA COM POLYCARD": {
+      "main": [
+        [
+          {
+            "node": "FILTRA INVALIDOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PAGINA COM DINAMYC CARROUSSEL": {
+      "main": [
+        [
+          {
+            "node": "FILTRA INVALIDOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "PAGINA COM DINAMYC CARROUSSEL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PAGINA COM POLYCARD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "PERCORRE CATEGORIAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MISTURAR": {
+      "main": [
+        [
+          {
+            "node": "RESET COLETOR GLOBAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PERCORRE CATEGORIAS": {
+      "main": [
+        [
+          {
+            "node": "EMBARALHA TODOS OS PRODUTOS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CARREGA HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CARREGA HTML": {
+      "main": [
+        [
+          {
+            "node": "DEFINE GRUPO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FILTRA INVALIDOS": {
+      "main": [
+        [
+          {
+            "node": "EXTRAIR PRODUCTID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EXTRAIR PRODUCTID": {
+      "main": [
+        [
+          {
+            "node": "LIMPAR URL PRODUTO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LIMPAR URL PRODUTO": {
+      "main": [
+        [
+          {
+            "node": "COLETA PRODUTOS GLOBAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ARMAZENA PRODUTOS NA PLANILHA DE PRODUTOS": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DEFINE GRUPO": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RESET COLETOR GLOBAL": {
+      "main": [
+        [
+          {
+            "node": "PERCORRE CATEGORIAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "COLETA PRODUTOS GLOBAL": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EMBARALHA TODOS OS PRODUTOS": {
+      "main": [
+        [
+          {
+            "node": "ARMAZENA PRODUTOS NA PLANILHA DE PRODUTOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1182daeaff41f6cf72ca57285ef248ea6e8434a230bc2c7aabafbf923adf27bd",
+    "economizaiVersion": "busca-ml-v2.2.1-embaralhamento-global",
+    "description": "Acumula produtos de todas as categorias, deduplica e aplica Fisher–Yates uma única vez antes de gravar o lote no Google Sheets.",
+    "observacaoOrdemPlanilha": "Em uma aba vazia, a ordem gravada será globalmente aleatória. appendOrUpdate não reposiciona linhas que já existiam."
+  },
+  "nodeGroups": [],
+  "tags": []
+}

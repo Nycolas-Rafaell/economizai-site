@@ -781,6 +781,9 @@ const categoryImportAliases = {
   'beleza-e-cuidado-pessoal': 'beleza-cuidados',
   'esportes-e-fitness': 'esportes-fitness',
   'calçados-roupas-e-bolsas': 'moda',
+  // O fluxo usa "Suplementos" como grupo; no catálogo do site essa seção
+  // pertence à categoria Saúde, que já contém a subcategoria Suplementos.
+  suplementos: 'saude',
 };
 
 function normalizeCategorySlug(value) {
@@ -1008,29 +1011,30 @@ function hasAutomationAccess(request) {
 }
 
 function offerFromAutomationRow(row) {
+  const source = normalizeImportRow(row);
   const offer = normalizeManualOffer({
-    title: row.nome ?? row.title,
-    image: row.imagem ?? row.image ?? '',
-    publicUrl: row.url_limpa ?? row.url_original ?? row.publicUrl,
-    affiliateUrl: row.link_afiliado ?? row.affiliateUrl,
-    currentPrice: row.preco_atual ?? row.currentPrice,
-    originalPrice: row.preco_original ?? row.originalPrice ?? '',
-    discountPct: row.desconto ?? row.discountPct ?? '',
-    category: row.categoria ?? row.category ?? 'outros',
-    subcategory: row.subcategoria ?? row.subcategory ?? '',
-    marketplace: row.loja ?? row.marketplace ?? 'mercado_livre',
-    rating: row.nota ?? row.rating ?? '',
-    reviewCount: row.quantidade_avaliacoes ?? row.reviewCount ?? '',
-    commentCount: row.quantidade_comentarios ?? row.commentCount ?? '',
-    quantitySold: row.quantidade_vendidas ?? row.quantitySold ?? '',
-    coupon: row.cupom ?? row.coupon ?? '',
-    description: row.descricao ?? row.description ?? '',
-    reviewSummary: row.resumo_avaliacoes ?? row.reviewSummary ?? '',
+    title: source.title,
+    image: source.image,
+    publicUrl: source.publicUrl,
+    affiliateUrl: source.affiliateUrl,
+    currentPrice: source.currentPrice,
+    originalPrice: source.originalPrice,
+    discountPct: source.discountPct,
+    category: source.category,
+    subcategory: source.subcategory,
+    marketplace: source.marketplace,
+    rating: source.rating,
+    reviewCount: source.reviewCount,
+    commentCount: source.commentCount,
+    quantitySold: source.quantitySold,
+    coupon: source.coupon,
+    description: source.description,
+    reviewSummary: source.reviewSummary,
     // O fluxo pode enviar "available" para publicar imediatamente ou "pending"
     // para deixar o card criado aguardando publicação no painel.
-    availabilityStatus: row.status_site === 'available' ? 'available' : 'pending',
+    availabilityStatus: source.statusSite === 'available' ? 'available' : 'pending',
   });
-  const externalProductId = externalProductIdFromRow(row);
+  const externalProductId = externalProductIdFromRow(source);
   if (externalProductId) {
     offer.id = `import-${offer.marketplace}-${externalProductId}`;
     offer.externalProductId = externalProductId;
@@ -1038,23 +1042,72 @@ function offerFromAutomationRow(row) {
   return offer;
 }
 
+function formatCouponText(type, value) {
+  const couponType = String(type || '').trim().toLowerCase();
+  const couponValue = String(value || '').trim();
+  if (!couponValue) return '';
+  if (['percentual', 'percentage', 'percentual_off'].includes(couponType)) return `${couponValue}% OFF com Cupom`;
+  if (['valor', 'valor-fixo', 'fixed', 'valor_off'].includes(couponType)) return `R$ ${couponValue.replace('.', ',')} OFF com Cupom`;
+  if (couponType === 'preco_com_cupom') return `R$ ${couponValue.replace('.', ',')} com Cupom`;
+  return `${couponValue} com Cupom`;
+}
+
+function formatQuantitySold(text, numericValue) {
+  const direct = String(text ?? '').trim();
+  if (direct) return direct;
+  const numeric = Number(String(numericValue ?? '').replace(/\D/g, ''));
+  return Number.isFinite(numeric) && numeric > 0 ? `${Math.trunc(numeric).toLocaleString('pt-BR')} vendidos` : '';
+}
+
+// Modelo oficial: "Modelo - Mercado Livre - v3 - Produtos.csv".
+// Aceita os nomes novos e preserva os nomes legados para importações antigas.
+function normalizeImportRow(row = {}) {
+  return {
+    title: row.nomeProduto ?? row.nome ?? row.title ?? '',
+    image: row.imagemProduto ?? row.imagem ?? row.image ?? '',
+    publicUrl: row.urlOriginal ?? row.url_original ?? row.url_limpa ?? row.publicUrl ?? '',
+    affiliateUrl: row.urlAfiliado ?? row.link_afiliado ?? row.affiliateUrl ?? '',
+    currentPrice: row.precoAtual ?? row.preco_atual ?? row.currentPrice ?? '',
+    originalPrice: row.precoOriginal ?? row.preco_original ?? row.originalPrice ?? '',
+    discountPct: row.desconto ?? row.discountPct ?? '',
+    category: row.Grupo ?? row.grupo ?? row.categoria ?? row.category ?? 'outros',
+    subcategory: row.subcategoria ?? row.subcategory ?? '',
+    marketplace: row.loja ?? row.marketplace ?? 'mercado_livre',
+    rating: row.notaNumero ?? row.nota ?? row.rating ?? '',
+    reviewCount: row.quantidadeAvaliacoes ?? row.quantidade_avaliacoes ?? row.reviewCount ?? '',
+    commentCount: row.quantidadeComentarios ?? row.quantidade_comentarios ?? row.commentCount ?? '',
+    quantitySold: formatQuantitySold(
+      row.quantidadeVendidas ?? row.quantidade_vendidas ?? row.quantitySold,
+      row.quantidadeVendidasNumero,
+    ),
+    coupon: row.cupom ?? row.coupon ?? formatCouponText(row.cupomTipo, row.cupomValor),
+    description: row.descricao ?? row.description ?? '',
+    reviewSummary: row.resumoAvaliacoes ?? row.resumo_avaliacoes ?? row.reviewSummary ?? '',
+    statusSite: row.status_site ?? row.statusSite ?? '',
+    sourceStatus: row.status ?? '',
+    sourceDate: row.data ?? '',
+    idProduto: row.idProduto ?? row.id_produto ?? '',
+  };
+}
+
 function externalProductIdFromRow(row) {
-  const rawUrl = String(row?.url_original || row?.publicUrl || row?.url_limpa || '');
+  const rawUrl = String(row?.urlOriginal || row?.url_original || row?.publicUrl || row?.url_limpa || '');
   const wid = rawUrl.match(/[?&#]wid=(MLB\d{6,})/i)?.[1];
   if (wid) return wid.toUpperCase();
   const itemId = rawUrl.match(/[?&#]item_id=(MLB\d{6,})/i)?.[1];
   if (itemId) return itemId.toUpperCase();
-  const listedId = String(row?.id_produto || '').match(/^MLB\d{6,}$/i)?.[0];
-  if (listedId) return listedId.toUpperCase();
   const pathId = rawUrl.match(/\/(?:p|up)\/(MLBU?\d{6,})/i)?.[1];
-  return pathId ? pathId.toUpperCase() : '';
+  if (pathId) return pathId.toUpperCase();
+  const listedId = String(row?.idProduto || row?.id_produto || '').trim().match(/^MLBU?\d{6,}$/i)?.[0];
+  return listedId ? listedId.toUpperCase() : '';
 }
 
 function importRowIdentity(row) {
-  const marketplace = String(row?.loja || row?.marketplace || 'mercado_livre').toLowerCase();
+  const normalized = normalizeImportRow(row);
+  const marketplace = String(normalized.marketplace || 'mercado_livre').toLowerCase();
   const externalProductId = externalProductIdFromRow(row);
   if (externalProductId) return `${marketplace}:${externalProductId}`;
-  const publicUrl = String(row?.url_original || row?.url_limpa || row?.publicUrl || '').trim().toLowerCase();
+  const publicUrl = String(normalized.publicUrl || '').trim().toLowerCase();
   return `${marketplace}:${publicUrl}`;
 }
 
@@ -1082,12 +1135,23 @@ function mergeImportRows(rows) {
     if (group.indexes.length > 1) {
       const base = group.row;
       const incoming = row;
-      for (const field of ['nome', 'imagem', 'link_afiliado', 'nota', 'quantidade_vendidas', 'cupom', 'descricao', 'resumo_avaliacoes', 'subcategoria']) {
+      for (const field of ['nomeProduto', 'nome', 'imagemProduto', 'imagem', 'urlAfiliado', 'link_afiliado', 'notaNumero', 'nota', 'quantidadeVendidas', 'quantidade_vendidas', 'cupom', 'descricao', 'resumoAvaliacoes', 'resumo_avaliacoes', 'subcategoria']) {
         base[field] = betterText(base[field], incoming[field]);
       }
-      if (importPriceNumber(incoming.preco_original) > importPriceNumber(base.preco_original)) base.preco_original = incoming.preco_original;
-      if (!importPriceNumber(base.preco_atual) && importPriceNumber(incoming.preco_atual)) base.preco_atual = incoming.preco_atual;
-      if ((!base.categoria || String(base.categoria).toLowerCase() === 'outros') && incoming.categoria) base.categoria = incoming.categoria;
+      const baseNormalized = normalizeImportRow(base);
+      const incomingNormalized = normalizeImportRow(incoming);
+      if (importPriceNumber(incomingNormalized.originalPrice) > importPriceNumber(baseNormalized.originalPrice)) {
+        if (Object.hasOwn(incoming, 'precoOriginal')) base.precoOriginal = incoming.precoOriginal;
+        else base.preco_original = incoming.preco_original;
+      }
+      if (!importPriceNumber(baseNormalized.currentPrice) && importPriceNumber(incomingNormalized.currentPrice)) {
+        if (Object.hasOwn(incoming, 'precoAtual')) base.precoAtual = incoming.precoAtual;
+        else base.preco_atual = incoming.preco_atual;
+      }
+      if ((!baseNormalized.category || String(baseNormalized.category).toLowerCase() === 'outros') && incomingNormalized.category) {
+        if (Object.hasOwn(incoming, 'Grupo')) base.Grupo = incoming.Grupo;
+        else base.categoria = incoming.categoria;
+      }
       if (String(incoming.status || '').toLowerCase() === 'pronto') base.status = 'pronto';
     }
     groups.set(identity, group);
@@ -1129,9 +1193,14 @@ function mergeOfferWithImportedData(existing, incoming) {
     merged[field] = betterText(existing[field], incoming[field]);
   }
   if ((!existing.category || String(existing.category).toLowerCase() === 'outros') && incoming.category) merged.category = incoming.category;
-  if (!importPriceNumber(existing.currentPrice) && importPriceNumber(incoming.currentPrice)) merged.currentPrice = incoming.currentPrice;
-  if (importPriceNumber(incoming.originalPrice) > importPriceNumber(existing.originalPrice)) merged.originalPrice = incoming.originalPrice;
-  if (!Number(existing.discountPct) && Number(incoming.discountPct)) merged.discountPct = incoming.discountPct;
+  // O CSV recém-gerado é a fonte mais atual de preço e link de afiliado.
+  if (importPriceNumber(incoming.currentPrice)) merged.currentPrice = incoming.currentPrice;
+  if (incoming.affiliateUrl) merged.affiliateUrl = incoming.affiliateUrl;
+  if (importPriceNumber(incoming.originalPrice)) merged.originalPrice = incoming.originalPrice;
+  if (incoming.rating) merged.rating = incoming.rating;
+  if (incoming.quantitySold) merged.quantitySold = incoming.quantitySold;
+  if (incoming.coupon) merged.coupon = incoming.coupon;
+  if (Number.isFinite(Number(incoming.discountPct))) merged.discountPct = incoming.discountPct;
   return merged;
 }
 
@@ -1154,9 +1223,9 @@ async function importOffersWithDuplicateProtection(rows, priceSource, transformR
 
   for (const group of mergeImportRows(rows)) {
     const rawRow = group.row;
-    const row = transformRow(rawRow);
     const line = group.indexes[0] + 2;
     try {
+      const row = transformRow(rawRow);
       const offer = offerFromAutomationRow(row);
       const duplicate = findDuplicateOffer(offer, [...knownOffers, ...imported]);
       if (duplicate) {
@@ -1179,8 +1248,9 @@ async function importOffersWithDuplicateProtection(rows, priceSource, transformR
       const message = error.message || 'Produto inválido.';
       for (const index of group.indexes) {
         const itemLine = index + 2;
-        rejected.push({ index: itemLine, nome: rawRow?.nome || rawRow?.title || '', message, reason: 'invalid' });
-        results.push({ index: itemLine, status: 'rejected', nome: rawRow?.nome || rawRow?.title || '', message, reason: 'invalid' });
+        const rowName = rawRow?.nomeProduto || rawRow?.nome || rawRow?.title || '';
+        rejected.push({ index: itemLine, nome: rowName, message, reason: 'invalid' });
+        results.push({ index: itemLine, status: 'rejected', nome: rowName, message, reason: 'invalid' });
       }
     }
   }

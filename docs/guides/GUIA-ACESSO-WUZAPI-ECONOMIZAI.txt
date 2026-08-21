@@ -1,0 +1,224 @@
+GUIA DE ACESSO — ECONOMIZAI / WUZAPI
+Atualizado em: 21/08/2026
+
+============================================================
+1. DADOS PRINCIPAIS
+============================================================
+
+Oracle Cloud — nome da instância: economizai-server
+Hostname Linux exibido no terminal: wuzapi-vcn
+Usuário SSH: ubuntu
+IP privado do Tailscale da VPS: SEU_IP_TAILSCALE_WUZAPI
+IP público atual da VPS: SEU_IP_PUBLICO_VPS
+Painel do WuzAPI: http://SEU_IP_TAILSCALE_WUZAPI:8080/dashboard
+API base do WuzAPI: http://SEU_IP_TAILSCALE_WUZAPI:8080
+Nome da instância WuzAPI: economizai-whatsapp
+JID do Canal EconomizAI: SEU_ID_DO_CANAL@newsletter
+
+ATENÇÃO:
+- O IP público pode mudar em algumas operações da Oracle.
+- Prefira o IP do Tailscale, SEU_IP_TAILSCALE_WUZAPI.
+- Não abra a porta 8080 publicamente na Oracle.
+- O token administrativo, o token da instância e a chave privada SSH não estão gravados neste guia.
+
+============================================================
+2. ENTRAR NA VPS PELO POWERSHELL
+============================================================
+
+Método recomendado, usando Tailscale:
+
+ssh -i "C:\CAMINHO\PARA\SUA-CHAVE-SSH.key" ubuntu@SEU_IP_TAILSCALE_WUZAPI
+
+Alternativa pelo IP público atual:
+
+ssh -i "C:\CAMINHO\PARA\SUA-CHAVE-SSH.key" ubuntu@SEU_IP_PUBLICO_VPS
+
+Quando a conexão funcionar, o terminal ficará parecido com:
+
+ubuntu@wuzapi-vcn:~$
+
+Nunca compartilhe o arquivo da chave privada:
+
+C:\CAMINHO\PARA\SUA-CHAVE-SSH.key
+
+============================================================
+3. ABRIR O PAINEL DO WUZAPI
+============================================================
+
+1. Confirme que o Tailscale está conectado no Windows.
+2. Abra no navegador:
+
+http://SEU_IP_TAILSCALE_WUZAPI:8080/dashboard
+
+3. Para entrar como administrador, consulte o token na VPS:
+
+grep '^WUZAPI_ADMIN_TOKEN=' ~/wuzapi/.env
+
+4. Copie somente o valor depois do sinal de igual.
+5. Cole em Access Token e clique em Admin Login.
+
+Não coloque o token administrativo nas credenciais do n8n.
+O n8n deve usar o token específico da instância economizai-whatsapp.
+
+============================================================
+4. VERIFICAR E CONTROLAR O WUZAPI
+============================================================
+
+Verificar o estado:
+
+sudo systemctl status wuzapi --no-pager
+
+Reiniciar o serviço:
+
+sudo systemctl restart wuzapi
+
+Parar o serviço:
+
+sudo systemctl stop wuzapi
+
+Iniciar o serviço:
+
+sudo systemctl start wuzapi
+
+Ver os últimos 100 registros:
+
+sudo journalctl -u wuzapi -n 100 --no-pager
+
+Acompanhar os registros ao vivo:
+
+sudo journalctl -u wuzapi -f
+
+Confirmar a porta 8080:
+
+sudo ss -lntp | grep 8080
+
+Diretório da instalação:
+
+/home/ubuntu/wuzapi
+
+Arquivo de configuração protegido:
+
+/home/ubuntu/wuzapi/.env
+
+Serviço systemd:
+
+/etc/systemd/system/wuzapi.service
+
+============================================================
+5. VERIFICAR O TAILSCALE
+============================================================
+
+Na VPS:
+
+tailscale status
+
+tailscale ip -4
+
+No PowerShell do Windows:
+
+& "C:\Program Files\Tailscale\tailscale.exe" status
+
+Testar a conexão com a VPS:
+
+& "C:\Program Files\Tailscale\tailscale.exe" ping SEU_IP_TAILSCALE_WUZAPI
+
+O Windows e a VPS devem estar conectados à mesma conta Tailscale.
+
+============================================================
+6. ACESSAR A ORACLE CLOUD
+============================================================
+
+Site:
+
+https://cloud.oracle.com
+
+Caminho no painel:
+
+Compute > Instances > economizai-server
+
+Configuração da VPS:
+
+- Sistema: Canonical Ubuntu 24.04
+- Shape: VM.Standard.E2.1.Micro
+- Plano: Always Free-eligible
+- CPU: 1 OCPU compartilhada
+- Memória: 1 GB
+- Swap configurada: 2 GB
+- VCN: wuzapi-vcn
+- Subnet: public subnet-wuzapi-vcn
+
+Evite clicar em Terminate. Essa opção exclui a VPS.
+
+============================================================
+7. INICIAR O N8N LOCAL
+============================================================
+
+No PowerShell do Windows:
+
+n8n
+
+Depois abra:
+
+http://localhost:5678
+
+O PowerShell do n8n precisa permanecer aberto para que gatilhos e workflows funcionem.
+O Tailscale do Windows também precisa permanecer conectado para o n8n acessar o WuzAPI.
+
+Dados para a integração:
+
+Base URL: http://SEU_IP_TAILSCALE_WUZAPI:8080
+Canal: SEU_ID_DO_CANAL@newsletter
+Autenticação: token da instância economizai-whatsapp
+
+Endpoint para texto:
+
+POST /chat/send/text
+
+Endpoint para imagem e legenda:
+
+POST /chat/send/image
+
+Exemplo de corpo para imagem:
+
+{
+  "Phone": "SEU_ID_DO_CANAL@newsletter",
+  "Caption": "Texto da oferta",
+  "Image": "data:image/jpeg;base64,..."
+}
+
+O header de autenticação da instância é:
+
+token: TOKEN_DA_INSTANCIA
+
+============================================================
+8. CANAL DO WHATSAPP
+============================================================
+
+Nome: Econimizaí - Ofertas Diárias
+JID: SEU_ID_DO_CANAL@newsletter
+Permissão confirmada: owner
+Estado confirmado: active
+
+Listar novamente os Canais pela VPS:
+
+read -s -p "Cole o token da INSTANCIA: " USER_TOKEN; echo
+
+curl -s -H "token: $USER_TOKEN" http://127.0.0.1:8080/newsletter/list | python3 -m json.tool
+
+unset USER_TOKEN
+
+============================================================
+9. CUIDADOS E BACKUP
+============================================================
+
+Itens que devem ser guardados com segurança:
+
+- Chave privada SSH do Oracle.
+- Token administrativo do WuzAPI.
+- Token da instância economizai-whatsapp.
+- Arquivo /home/ubuntu/wuzapi/.env.
+- Base SQLite e arquivos de sessão existentes em /home/ubuntu/wuzapi.
+- Pasta local C:\Users\Rafae\.n8n.
+
+Não publique tokens, chaves, cookies ou o conteúdo do arquivo .env.
+O WuzAPI é uma integração não oficial com o WhatsApp. Evite spam e envios agressivos para reduzir o risco de bloqueio da conta.

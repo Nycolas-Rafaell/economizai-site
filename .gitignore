@@ -1,4 +1,14 @@
 # Segredos e dados temporários da integração Mercado Livre
 .env
+.env.*
+!.env.example
 .ml_tokens.json
 node_modules/
+
+# Credenciais e chaves locais
+*.key
+*.pem
+*.pfx
+*.p12
+*credentials*.json
+*secrets*.json

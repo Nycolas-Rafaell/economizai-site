@@ -67,7 +67,7 @@ export function createSupabaseOfferStore(config) {
   }
 
   async function readLastHistory(offerId) {
-    const rows = await request(`price_history?select=price,original_price,recorded_at,source&offer_id=eq.${encodeURIComponent(offerId)}&order=recorded_at.desc&limit=1`);
+    const rows = await request(`price_history?select=price,original_price,recorded_at,source,change_reason&offer_id=eq.${encodeURIComponent(offerId)}&order=recorded_at.desc&limit=1`);
     return rows?.[0] || null;
   }
 
@@ -114,9 +114,13 @@ export function createSupabaseOfferStore(config) {
 
     const publicationStatus = ['available', 'unavailable', 'pending'].includes(offer.availabilityStatus)
       ? offer.availabilityStatus : (offer.available === false ? 'unavailable' : 'available');
-    const externalProductId = String(offer.id);
-    const offerIdentity = `marketplace_id=eq.${encodeURIComponent(marketplaceId)}&external_product_id=eq.${encodeURIComponent(externalProductId)}`;
-    const existingRows = await request(`offers?select=id&${offerIdentity}&order=created_at.asc`);
+    const externalProductId = String(offer.externalProductId || offer.id);
+    // Versões anteriores salvaram "import-mercado_livre-MLB..." como ID externo.
+    // A busca pelos dois formatos atualiza esse registro em vez de duplicá-lo.
+    const legacyExternalProductId = String(offer.id);
+    const externalIds = [...new Set([externalProductId, legacyExternalProductId])];
+    const externalIdFilter = externalIds.map((id) => `external_product_id.eq.${encodeURIComponent(id)}`).join(',');
+    const existingRows = await request(`offers?select=id&marketplace_id=eq.${encodeURIComponent(marketplaceId)}&or=(${externalIdFilter})&order=created_at.asc`);
     const offerPayload = {
       product_id: product.id,
       marketplace_id: marketplaceId,
@@ -133,7 +137,7 @@ export function createSupabaseOfferStore(config) {
       is_published: publicationStatus === 'available',
     };
     const offerRows = existingRows?.length
-      ? await request(`offers?${offerIdentity}`, { method: 'PATCH', prefer: 'return=representation', body: offerPayload })
+      ? await request(`offers?id=eq.${encodeURIComponent(existingRows[0].id)}`, { method: 'PATCH', prefer: 'return=representation', body: offerPayload })
       : await request('offers', { method: 'POST', prefer: 'return=representation', body: [offerPayload] });
     const savedOffer = offerRows?.[0];
     if (!savedOffer?.id) throw new Error('Supabase: não foi possível salvar a oferta.');
@@ -230,7 +234,7 @@ export function createSupabaseOfferStore(config) {
         availabilityStatus,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
-        priceHistory: (historyByOfferId.get(item.id) || []).map((history) => ({ price: Number(history.price), originalPrice: history.original_price == null ? null : Number(history.original_price), at: history.recorded_at, source: history.source || 'painel' })),
+        priceHistory: (historyByOfferId.get(item.id) || []).map((history) => ({ price: Number(history.price), originalPrice: history.original_price == null ? null : Number(history.original_price), at: history.recorded_at, source: history.source || 'painel', reason: history.change_reason || null })),
       };
     });
   }

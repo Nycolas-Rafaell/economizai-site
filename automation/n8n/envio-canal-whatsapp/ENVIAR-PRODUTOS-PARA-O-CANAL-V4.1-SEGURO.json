@@ -1,0 +1,616 @@
+{
+  "name": "ENVIAR PRODUTOS PARA O CANAL - v4.1 SEGURO (SEM IA)",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "idGrupo"
+            },
+            {
+              "name": "loja"
+            },
+            {
+              "name": "categoria"
+            },
+            {
+              "name": "mensagemAdicional"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -352,
+        0
+      ],
+      "id": "6e1b0e04-1a98-4d30-b54c-0a78e76581b1",
+      "name": "GATILHO DE ENTRADA"
+    },
+    {
+      "parameters": {
+        "jsCode": "const dados = $('DADOS DO PRODUTO').first().json;\nconst nome = String(dados.nomeProduto || 'Produto em oferta').trim();\nconst preco = String(dados.preco || '').trim();\nconst link = String(dados.linkProduto || '').trim();\nconst extra = String(dados.mensagemAdicional || '').trim();\n\nconst linhasPreco = preco.split(/\\\\n|\\n/).map(v => v.trim()).filter(Boolean);\nconst precoAntigo = linhasPreco[0] || '';\nconst precoAtual = linhasPreco[1] || precoAntigo;\nconst desconto = linhasPreco[2] || '';\n\nconst legenda = [\n  '🔥 *OFERTA DO DIA* 🔥',\n  `🛍️ *${nome}*`,\n  precoAntigo && precoAtual !== precoAntigo ? `De: ~R$ ${precoAntigo.replace(/^R\\$\\s*/, '')}~` : '',\n  precoAtual ? `💰 *Por apenas: R$ ${precoAtual.replace(/^R\\$\\s*/, '')}*` : '',\n  desconto ? `📉 *${desconto}*` : '',\n  '🛒 *CLIQUE E APROVEITE:*',\n  link,\n  extra,\n  '_⚡ Preço e disponibilidade podem mudar a qualquer momento._',\n].filter(Boolean).join('\\n\\n');\n\nreturn [{ json: { legenda } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ],
+      "id": "f83ceaf4-62d6-4fad-acb1-601275d17c29",
+      "name": "criador de legendas"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6ef053d8-9dd6-43a2-856c-f8a4a010cb9d",
+              "name": "idGrupo",
+              "value": "={{ $('GATILHO DE ENTRADA').item.json.idGrupo }}",
+              "type": "string"
+            },
+            {
+              "id": "9d038a1c-89ef-481a-870b-ecaf61af8c61",
+              "name": "loja",
+              "value": "={{ $('GATILHO DE ENTRADA').item.json.loja }}",
+              "type": "string"
+            },
+            {
+              "id": "1b0a9049-3d63-4070-b38c-f9e1bb7c60a0",
+              "name": "nomeProduto",
+              "value": "={{ $json.nomeProduto }}",
+              "type": "string"
+            },
+            {
+              "id": "4b9b23d6-38b1-489c-90fe-3abade07d2b3",
+              "name": "preco",
+              "value": "={{ $json.precoFormatado }}",
+              "type": "string"
+            },
+            {
+              "id": "80d40b74-c7c6-4d37-9329-da2bffbb706d",
+              "name": "linkProduto",
+              "value": "={{ $json.urlAfiliado }}",
+              "type": "string"
+            },
+            {
+              "id": "c9268b5c-e564-4986-a9ac-28fb20c685e9",
+              "name": "urlImagem",
+              "value": "={{ $json.imagemProduto }}",
+              "type": "string"
+            },
+            {
+              "id": "731f9acd-1ecf-4e63-93a9-2cc6367f8427",
+              "name": "mensagemAdicional",
+              "value": "={{ $('GATILHO DE ENTRADA').item.json.mensagemAdicional }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        0
+      ],
+      "id": "b64d29e6-b37b-4b8c-914f-01ef148227d3",
+      "name": "DADOS DO PRODUTO"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "04eaaa16-a130-4796-8a23-2aa22c306b7f",
+              "leftValue": "={{ $json.nomeProduto }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "5657d9fe-172f-4126-9ff9-c87106395351",
+              "leftValue": "={{ $json.preco }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "d4532288-4109-4404-829e-ff015f6e0e21",
+              "leftValue": "={{ $json.linkProduto }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "5457dacf-9a3d-4cdc-9b76-63cf2e8442e6",
+              "leftValue": "={{ $json.urlImagem }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        320,
+        0
+      ],
+      "id": "791a79a2-97c3-47c3-84a9-13febfc6e85e",
+      "name": "FILTRA PRODUTO INVALIDO"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('DADOS DO PRODUTO').item.json.urlImagem }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "d266a49d-af8d-4149-a6a3-99e044bccdaf",
+      "name": "CARREGA A IMAGEM",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "borderWidth": 5,
+        "borderHeight": 5,
+        "borderColor": "#049BF9",
+        "options": {
+          "format": "jpeg"
+        }
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        0
+      ],
+      "id": "2047f8cf-3145-405e-acd4-b29da76873ae",
+      "name": "EDITA IMAGEM"
+    },
+    {
+      "parameters": {
+        "quality": 75,
+        "resize": {},
+        "maxInputSizeMb": 1
+      },
+      "type": "n8n-nodes-image-compress.compressImage",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        0
+      ],
+      "id": "6024f62e-fb30-4bc1-bc95-2ce28a6975e3",
+      "name": "COMPRIME IMAGEM"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {
+          "encoding": "base64"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        0
+      ],
+      "id": "2090016a-41d0-4bc9-9b7b-f1506fbf411c",
+      "name": "CONVERTE PARA BASE64"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://SEU_IP_TAILSCALE_WUZAPI:8080/chat/send/image",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ Phone: 'SEU_ID_DO_CANAL@newsletter', Caption: criador de legendas.item.json.legenda, Image: 'data:image/jpeg;base64,' + $json.data }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2016,
+        0
+      ],
+      "id": "ef2be128-a4a2-4dd6-9ce3-d3dc9b03f07d",
+      "name": "ENVIA IMAGEM PARA O CANAL"
+    },
+    {
+      "parameters": {
+        "content": "# UTILIZAR A LLM DESEJADA",
+        "height": 288,
+        "width": 1040,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        304,
+        192
+      ],
+      "id": "2349c4ac-d14e-4499-9674-d40f7a50d582",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# TUTORIAL DE INSTALAÇÃO WUZAPI\n\n\n@[youtube](YCfUaplWxRY)",
+        "height": 912,
+        "width": 1472
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        608
+      ],
+      "id": "294b54de-1d0b-486e-84b0-2411cbefa40b",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "SELECIONE_A_PLANILHA_NO_N8N",
+          "mode": "list",
+          "cachedResultName": "Modelo - Mercado Livre - v3",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "SELECIONE_A_ABA_PRODUTOS",
+          "mode": "list",
+          "cachedResultName": "Produtos",
+          "cachedResultUrl": ""
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "status",
+              "lookupValue": "PRONTO"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -128,
+        0
+      ],
+      "id": "f468cd1b-4132-424e-b0e7-21bdf1b06580",
+      "name": "PEGAR O 1o PRODUTO DISPONIVEL",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SELECIONE_NO_N8N",
+          "name": "SELECIONE_A_CREDENCIAL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "SELECIONE_A_PLANILHA_NO_N8N",
+          "mode": "list",
+          "cachedResultName": "Modelo - Mercado Livre - v3",
+          "cachedResultUrl": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "SELECIONE_A_ABA_PRODUTOS",
+          "mode": "list",
+          "cachedResultName": "Produtos",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('PEGAR O 1o PRODUTO DISPONIVEL').item.json.row_number }}",
+            "status": "ENVIADO",
+            "success": "TRUE",
+            "data": "={{ $now }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "idProduto",
+              "displayName": "idProduto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "nomeProduto",
+              "displayName": "nomeProduto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "imagemProduto",
+              "displayName": "imagemProduto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "preco",
+              "displayName": "preco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "urlOriginal",
+              "displayName": "urlOriginal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "urlAfiliado",
+              "displayName": "urlAfiliado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "success",
+              "displayName": "success",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2240,
+        0
+      ],
+      "id": "81eeb4d1-30cd-4d72-b58a-06c23b3ce452",
+      "name": "ATUALIZAR O STATUS DO PRODUTO",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SELECIONE_NO_N8N",
+          "name": "SELECIONE_A_CREDENCIAL"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "GATILHO DE ENTRADA": {
+      "main": [
+        [
+          {
+            "node": "PEGAR O 1o PRODUTO DISPONIVEL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "criador de legendas": {
+      "main": [
+        [
+          {
+            "node": "CARREGA A IMAGEM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DADOS DO PRODUTO": {
+      "main": [
+        [
+          {
+            "node": "FILTRA PRODUTO INVALIDO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FILTRA PRODUTO INVALIDO": {
+      "main": [
+        [
+          {
+            "node": "criador de legendas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CARREGA A IMAGEM": {
+      "main": [
+        [
+          {
+            "node": "EDITA IMAGEM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EDITA IMAGEM": {
+      "main": [
+        [
+          {
+            "node": "COMPRIME IMAGEM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "COMPRIME IMAGEM": {
+      "main": [
+        [
+          {
+            "node": "CONVERTE PARA BASE64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CONVERTE PARA BASE64": {
+      "main": [
+        [
+          {
+            "node": "ENVIA IMAGEM PARA O CANAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PEGAR O 1o PRODUTO DISPONIVEL": {
+      "main": [
+        [
+          {
+            "node": "DADOS DO PRODUTO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ENVIA IMAGEM PARA O CANAL": {
+      "main": [
+        [
+          {
+            "node": "ATUALIZAR O STATUS DO PRODUTO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "fcec7d1e-987c-4079-83ff-2bd69123e965",
+  "meta": {
+    "instanceId": "4e474214bcf60c1518d0b243ca48faad8775bf534b0cde8f194334c4a5c35e19"
+  },
+  "id": "yC1ndweCIjaphRdF",
+  "tags": [
+    {
+      "updatedAt": "2026-04-08T11:10:57.544Z",
+      "createdAt": "2026-04-08T11:10:57.544Z",
+      "id": "qbrT8A1yD6W4oIlS",
+      "name": "Automação de afiliados"
+    },
+    {
+      "updatedAt": "2026-03-17T12:42:41.5Z",
+      "createdAt": "2026-03-17T12:42:41.5Z",
+      "id": "EiThhqGbDI4RFTJt",
+      "name": "Julio Borges"
+    }
+  ]
+}

@@ -23,6 +23,51 @@ function parseCsv(text) {
   return rows.map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] || ''])));
 }
 
+function value(row, ...keys) {
+  for (const key of keys) {
+    const candidate = row[key];
+    if (candidate != null && String(candidate).trim() !== '') return String(candidate).trim();
+  }
+  return '';
+}
+
+function couponText(row) {
+  const direct = value(row, 'cupom', 'coupon');
+  if (direct) return direct;
+  const couponValue = value(row, 'cupomValor');
+  const couponType = value(row, 'cupomTipo').toLowerCase();
+  if (!couponValue) return '';
+  if (['percentual', 'percentage', 'percentual_off'].includes(couponType)) return `${couponValue}% OFF com Cupom`;
+  if (['valor', 'valor-fixo', 'fixed', 'valor_off'].includes(couponType)) return `R$ ${couponValue.replace('.', ',')} OFF com Cupom`;
+  if (couponType === 'preco_com_cupom') return `R$ ${couponValue.replace('.', ',')} com Cupom`;
+  return `${couponValue} com Cupom`;
+}
+
+function soldText(row) {
+  const direct = value(row, 'quantidadeVendidas', 'quantidade_vendidas', 'quantitySold');
+  if (direct) return direct;
+  const numeric = Number(value(row, 'quantidadeVendidasNumero'));
+  return Number.isFinite(numeric) && numeric > 0 ? `${Math.trunc(numeric).toLocaleString('pt-BR')} vendidos` : '';
+}
+
+function normalizeOfficialRow(row) {
+  return {
+    ...row,
+    nome: value(row, 'nomeProduto', 'nome', 'title'),
+    imagem: value(row, 'imagemProduto', 'imagem', 'image'),
+    url_original: value(row, 'urlOriginal', 'url_original', 'publicUrl'),
+    link_afiliado: value(row, 'urlAfiliado', 'link_afiliado', 'affiliateUrl'),
+    preco_atual: value(row, 'precoAtual', 'preco_atual', 'currentPrice'),
+    preco_original: value(row, 'precoOriginal', 'preco_original', 'originalPrice'),
+    categoria: value(row, 'Grupo', 'grupo', 'categoria', 'category') || 'outros',
+    nota: value(row, 'notaNumero', 'nota', 'rating'),
+    quantidade_vendidas: soldText(row),
+    cupom: couponText(row),
+    id_produto: value(row, 'idProduto', 'id_produto'),
+    status: value(row, 'status').toLowerCase(),
+  };
+}
+
 function setStatus(message, type = '') { status.textContent = message; status.className = `import-status ${type}`; }
 function safe(value) { const span = document.createElement('span'); span.textContent = String(value || ''); return span.innerHTML; }
 
@@ -42,8 +87,8 @@ function renderPreview() {
 fileInput.addEventListener('change', async () => {
   const file = fileInput.files?.[0]; validRows = []; importResults = new Map(); importButton.disabled = true; preview.hidden = true;
   if (!file) return setStatus('Escolha o arquivo CSV para validar os produtos.');
-  const rows = parseCsv(await file.text());
-  validRows = rows.filter((row) => String(row.status || '').trim().toLowerCase() === 'pronto' && /^https?:\/\//i.test(String(row.link_afiliado || '').trim()));
+  const rows = parseCsv(await file.text()).map(normalizeOfficialRow);
+  validRows = rows.filter((row) => row.status === 'pronto' && /^https?:\/\//i.test(row.link_afiliado));
   count.textContent = `${validRows.length} linha(s) pronta(s) para importar`;
   if (!validRows.length) return setStatus('Nenhuma linha válida foi encontrada. O CSV precisa ter status “pronto” e link_afiliado preenchido.', 'error');
   importButton.disabled = false; setStatus('Revise a prévia e confirme a importação. Linhas do mesmo anúncio serão unificadas antes de criar o card.'); renderPreview();

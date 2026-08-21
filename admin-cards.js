@@ -3,8 +3,11 @@ const hint = document.getElementById('hint');
 const search = document.getElementById('search');
 const bulkActions = document.getElementById('bulkActions');
 const scanInvalidPrices = document.getElementById('scanInvalidPrices');
+const cardsPagination = document.getElementById('cardsPagination');
 let offers = [];
 let selectedStatus = null;
+let currentPage = 1;
+const cardsPerPage = 12;
 
 const money = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 const escapeHtml = (value) => String(value || '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
@@ -168,15 +171,66 @@ async function scanAndRemoveInvertedPrices() {
   }
 }
 
+function pageButton(text, page, { active = false, disabled = false, label = '' } = {}) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = `admin-page-button${active ? ' active' : ''}`;
+  button.textContent = text;
+  button.disabled = disabled;
+  if (active) button.setAttribute('aria-current', 'page');
+  button.setAttribute('aria-label', label || `Ir para a página ${page}`);
+  button.addEventListener('click', () => {
+    if (disabled || active) return;
+    currentPage = page;
+    render();
+    document.getElementById('lista')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  return button;
+}
+
+function renderPagination(totalItems) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / cardsPerPage));
+  currentPage = Math.min(Math.max(1, currentPage), totalPages);
+  cardsPagination.replaceChildren();
+  cardsPagination.hidden = totalPages <= 1;
+  if (cardsPagination.hidden) return;
+
+  cardsPagination.append(pageButton('←', currentPage - 1, { disabled: currentPage === 1, label: 'Página anterior' }));
+  const pages = totalPages <= 7
+    ? Array.from({ length: totalPages }, (_, index) => index + 1)
+    : [1, ...(currentPage > 4 ? ['…'] : []), ...[currentPage - 1, currentPage, currentPage + 1].filter((page) => page > 1 && page < totalPages), ...(currentPage < totalPages - 3 ? ['…'] : []), totalPages];
+  [...new Set(pages)].forEach((page) => {
+    if (page === '…') {
+      const ellipsis = document.createElement('span');
+      ellipsis.className = 'admin-page-ellipsis';
+      ellipsis.textContent = '…';
+      ellipsis.setAttribute('aria-hidden', 'true');
+      cardsPagination.append(ellipsis);
+    } else cardsPagination.append(pageButton(String(page), page, { active: page === currentPage }));
+  });
+  cardsPagination.append(pageButton('→', currentPage + 1, { disabled: currentPage === totalPages, label: 'Próxima página' }));
+
+  const start = (currentPage - 1) * cardsPerPage + 1;
+  const end = Math.min(totalItems, currentPage * cardsPerPage);
+  const summary = document.createElement('p');
+  summary.className = 'admin-page-summary';
+  summary.textContent = `Mostrando ${start}–${end} de ${totalItems} cards`;
+  cardsPagination.append(summary);
+}
+
 function render() {
   const term = search.value.trim().toLocaleLowerCase('pt-BR');
   const visible = offers.filter((offer) => {
     const matchesSearch = !term || `${offer.title || ''} ${offer.category || ''} ${offer.subcategory || ''}`.toLocaleLowerCase('pt-BR').includes(term);
     return matchesSearch && (!selectedStatus || statusOf(offer) === selectedStatus);
   });
+  const totalPages = Math.max(1, Math.ceil(visible.length / cardsPerPage));
+  currentPage = Math.min(currentPage, totalPages);
+  const pageStart = (currentPage - 1) * cardsPerPage;
+  const pageOffers = visible.slice(pageStart, pageStart + cardsPerPage);
   const selectedLabel = selectedStatus ? labels[selectedStatus] : 'Todos os status';
   document.getElementById('cardsCounter').textContent = `${visible.length} ${visible.length === 1 ? 'card encontrado' : 'cards encontrados'} · ${selectedLabel}`;
-  cards.replaceChildren(...visible.map((offer) => {
+  cards.replaceChildren(...pageOffers.map((offer) => {
     const state = statusOf(offer);
     const row = document.createElement('article');
     row.className = `admin-offer-card status-${state}`;
@@ -198,6 +252,7 @@ function render() {
     return row;
   }));
   hint.textContent = visible.length ? '' : (term ? 'Nenhum card encontrado para essa busca.' : selectedStatus ? `Nenhum card em “${labels[selectedStatus]}”.` : 'Nenhum card cadastrado ainda.');
+  renderPagination(visible.length);
   renderBulkActions();
 }
 
@@ -214,12 +269,13 @@ async function load() {
   }
 }
 
-search.addEventListener('input', render);
+search.addEventListener('input', () => { currentPage = 1; render(); });
 scanInvalidPrices.addEventListener('click', scanAndRemoveInvertedPrices);
 document.querySelectorAll('[data-status-filter]').forEach((button) => {
   button.addEventListener('click', () => {
     const nextStatus = button.dataset.statusFilter;
     selectedStatus = selectedStatus === nextStatus ? null : nextStatus;
+    currentPage = 1;
     document.querySelectorAll('[data-status-filter]').forEach((metric) => {
       const active = metric.dataset.statusFilter === selectedStatus;
       metric.classList.toggle('is-selected', active);

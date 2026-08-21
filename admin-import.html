@@ -14,7 +14,7 @@
     <nav class="admin-nav" aria-label="Atalhos do catálogo"><a href="admin.html?cadastro=1#cadastro"><b>＋</b> Nova oferta</a><a href="admin-cards.html"><b>▦</b> Cards cadastrados</a><a href="analytics.html"><b>▥</b> Análises</a><a href="reportes.html"><b>✦</b> Atendimento</a><a href="admin-users.html"><b>♙</b> Usuários</a><a href="index.html"><b>↗</b> Ver site</a></nav>
     <section class="import-box">
       <h2>Arquivo da aba Produtos</h2>
-      <p>No Google Sheets, abra a aba <strong>Produtos</strong> e use <strong>Arquivo → Fazer download → Valores separados por vírgulas (.csv)</strong>. Serão importadas apenas linhas com <code>status</code> igual a <code>pronto</code> e um <code>link_afiliado</code> válido.</p>
+      <p>Modelo oficial: <strong>Mercado Livre v3</strong>. No Google Sheets, abra a aba <strong>Produtos</strong> e use <strong>Arquivo → Fazer download → Valores separados por vírgulas (.csv)</strong>. Serão importadas linhas com <code>status</code> igual a <code>PRONTO</code> e <code>urlAfiliado</code> válido. O sistema reconhece também as colunas antigas por compatibilidade.</p>
       <label class="file-drop"><span><strong>Selecione o CSV exportado</strong><br><small>Nenhum produto é criado antes da confirmação abaixo.</small><br><input id="csvFile" type="file" accept=".csv,text/csv"></span></label>
       <label class="import-options"><input id="publishNow" type="checkbox"> Publicar os cards imediatamente no site</label>
       <div class="import-actions"><button id="importButton" type="button" disabled>Importar cards prontos</button><span id="count"></span></div>
