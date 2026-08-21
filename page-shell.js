@@ -22,6 +22,14 @@ let categoryGroups = window.ECONOMIZAI_CATEGORIES || [
 
 function links(items) { return Object.entries(items).map(([label, url]) => `<a href="${url}"${url.startsWith('http') ? ' target="_blank" rel="noopener"' : ''}>${label}</a>`).join(''); }
 function toggleMenu() { document.getElementById('siteMenu')?.classList.toggle('open'); }
+function goToPreviousPage(event) {
+  event?.preventDefault();
+  if (window.history.length > 1) {
+    window.history.back();
+    return;
+  }
+  window.location.assign('index.html');
+}
 function toggleCategoryGroup(button) { const group = button.closest('.category-group'); const open = !group.classList.contains('open'); group.classList.toggle('open', open); button.setAttribute('aria-expanded', String(open)); }
 function categoryMenu() {
   return `<a class="category-all" href="index.html">Todas as ofertas</a>${categoryGroups.map(({ id, label, subs }) => {
@@ -31,6 +39,7 @@ function categoryMenu() {
   }).join('')}`;
 }
 window.toggleMenu = toggleMenu;
+window.goToPreviousPage = goToPreviousPage;
 window.toggleCategoryGroup = toggleCategoryGroup;
 
 const footer = document.querySelector('[data-site-footer]') || document.querySelector('.site-footer');
@@ -53,7 +62,8 @@ if (!header) {
 }
 
 if (header) {
-  header.innerHTML = `<div class="ticker">ECONOMIZE MAIS • COMPRE MELHOR • AS MELHORES OFERTAS, SEMPRE!</div><nav class="top-nav common-nav"><a class="nav-link nav-back" href="index.html">← Ofertas</a><button class="nav-btn" type="button" onclick="toggleMenu()">☰ Categorias</button><a class="nav-link" href="contato.html">Contato</a><div class="common-nav-right"><a class="nav-link account-login" href="login.html">Entrar</a><a class="nav-link admin-link" href="analytics.html" hidden>Painel admin</a><div class="common-profile" hidden><button class="common-profile-trigger" type="button" aria-expanded="false"><img alt=""><span></span>⌄</button><div class="common-profile-dropdown" hidden><a href="conta.html">Minha conta</a><a href="favoritos.html">Meus favoritos</a><a href="alertas.html">Meus Alertas</a><button type="button">Sair</button></div></div></div></nav><aside class="drawer category-drawer" id="siteMenu"><button class="drawer-close" onclick="toggleMenu()" aria-label="Fechar">×</button><h2>Categorias</h2>${categoryMenu()}<h3>Links</h3><a href="lojas.html">Ofertas por loja</a><a href="contato.html">Contato</a>${links(socialLinks)}</aside>`;
+  header.innerHTML = `<div class="ticker">ECONOMIZE MAIS • COMPRE MELHOR • AS MELHORES OFERTAS, SEMPRE!</div><nav class="top-nav common-nav"><a class="nav-link nav-back nav-previous" href="index.html" aria-label="Voltar para a página anterior">← Página anterior</a><a class="nav-link nav-back nav-offers" href="index.html">⌂ Ofertas</a><button class="nav-btn" type="button" onclick="toggleMenu()">☰ Categorias</button><a class="nav-link" href="contato.html">Contato</a><div class="common-nav-right"><a class="nav-link account-login" href="login.html">Entrar</a><a class="nav-link admin-link" href="analytics.html" hidden>Painel admin</a><div class="common-profile" hidden><button class="common-profile-trigger" type="button" aria-expanded="false"><img alt=""><span></span>⌄</button><div class="common-profile-dropdown" hidden><a href="conta.html">Minha conta</a><a href="favoritos.html">Meus favoritos</a><a href="alertas.html">Meus Alertas</a><button type="button">Sair</button></div></div></div></nav><aside class="drawer category-drawer" id="siteMenu"><button class="drawer-close" onclick="toggleMenu()" aria-label="Fechar">×</button><h2>Categorias</h2>${categoryMenu()}<h3>Links</h3><a href="lojas.html">Ofertas por loja</a><a href="contato.html">Contato</a>${links(socialLinks)}</aside>`;
+  header.querySelector('.nav-previous')?.addEventListener('click', goToPreviousPage);
   header.querySelector('.common-nav > a[href="contato.html"]')?.remove();
   fetch('/api/auth/session', { cache: 'no-store' }).then(async (response) => {
     if (!response.ok) return;
