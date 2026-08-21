@@ -70,6 +70,7 @@ function normalizeOfficialRow(row) {
 
 function setStatus(message, type = '') { status.textContent = message; status.className = `import-status ${type}`; }
 function safe(value) { const span = document.createElement('span'); span.textContent = String(value || ''); return span.innerHTML; }
+function isImportableStatus(value) { return ['pronto', 'enviado'].includes(String(value || '').trim().toLowerCase()); }
 
 function renderPreview() {
   preview.hidden = !validRows.length;
@@ -88,9 +89,9 @@ fileInput.addEventListener('change', async () => {
   const file = fileInput.files?.[0]; validRows = []; importResults = new Map(); importButton.disabled = true; preview.hidden = true;
   if (!file) return setStatus('Escolha o arquivo CSV para validar os produtos.');
   const rows = parseCsv(await file.text()).map(normalizeOfficialRow);
-  validRows = rows.filter((row) => row.status === 'pronto' && /^https?:\/\//i.test(row.link_afiliado));
-  count.textContent = `${validRows.length} linha(s) pronta(s) para importar`;
-  if (!validRows.length) return setStatus('Nenhuma linha válida foi encontrada. O CSV precisa ter status “pronto” e link_afiliado preenchido.', 'error');
+  validRows = rows.filter((row) => isImportableStatus(row.status) && /^https?:\/\//i.test(row.link_afiliado));
+  count.textContent = `${validRows.length} linha(s) válida(s) para importar`;
+  if (!validRows.length) return setStatus('Nenhuma linha válida foi encontrada. O CSV precisa ter status “PRONTO” ou “ENVIADO” e link_afiliado preenchido.', 'error');
   importButton.disabled = false; setStatus('Revise a prévia e confirme a importação. Linhas do mesmo anúncio serão unificadas antes de criar o card.'); renderPreview();
 });
 

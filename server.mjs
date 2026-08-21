@@ -1152,7 +1152,8 @@ function mergeImportRows(rows) {
         if (Object.hasOwn(incoming, 'Grupo')) base.Grupo = incoming.Grupo;
         else base.categoria = incoming.categoria;
       }
-      if (String(incoming.status || '').toLowerCase() === 'pronto') base.status = 'pronto';
+      const incomingStatus = String(incoming.status || '').trim().toLowerCase();
+      if (['pronto', 'enviado'].includes(incomingStatus)) base.status = incomingStatus;
     }
     groups.set(identity, group);
   });
