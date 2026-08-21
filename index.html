@@ -330,6 +330,16 @@
   .price-new-label { font-size: 10.5px; color: var(--yellow); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; }
   .price-new { min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 23px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
   .price-new-row .discount-flag { flex: 0 0 auto; white-space: nowrap; }
+  .coupon-callout {
+    display:flex; align-items:flex-start; gap:8px;
+    padding:8px 10px;
+    border:1px solid rgba(52,199,120,.58);
+    border-radius:8px;
+    background:rgba(52,199,120,.11);
+    color:#baf3d1;
+    font:700 11px/1.35 'Sora',sans-serif;
+  }
+  .coupon-callout::before { content:'🎟️'; flex:0 0 auto; }
 
   .card-cta {
     margin-top: 2px;
@@ -1324,7 +1334,9 @@
           const precoAnterior = oferta.originalPrice ? `<div class="price-old-row"><span class="price-old-label">De</span><span class="price-old">${formatarPreco(oferta.originalPrice)}</span></div>` : '';
           const loja = oferta.marketplace === 'shopee' ? 'Shopee' : 'Mercado Livre';
           const paginaProduto = escaparHtml(card.dataset.productUrl);
-          card.innerHTML = `<div class="card-media">${oferta.image ? `<img src="${escaparHtml(oferta.image)}" alt="${escaparHtml(oferta.title)}" loading="lazy" decoding="async">` : 'Imagem não disponível'}${desconto}<span class="store-badge">${loja}</span></div><div class="card-body"><div class="card-title">${escaparHtml(oferta.title)}</div><div class="price-block">${precoAnterior}<div class="price-new-row"><span class="price-new-label">Por</span><span class="price-new">${formatarPreco(oferta.currentPrice)}</span></div></div><a class="card-cta" href="${paginaProduto}">Ver oferta</a></div>`;
+          const cupom = String(oferta.coupon || '').trim();
+          const cupomHtml = cupom ? `<div class="coupon-callout" title="Cupom confirmado na última verificação">${escaparHtml(cupom)}</div>` : '';
+          card.innerHTML = `<div class="card-media">${oferta.image ? `<img src="${escaparHtml(oferta.image)}" alt="${escaparHtml(oferta.title)}" loading="lazy" decoding="async">` : 'Imagem não disponível'}${desconto}<span class="store-badge">${loja}</span></div><div class="card-body"><div class="card-title">${escaparHtml(oferta.title)}</div><div class="price-block">${precoAnterior}<div class="price-new-row"><span class="price-new-label">Por</span><span class="price-new">${formatarPreco(oferta.currentPrice)}</span></div></div>${cupomHtml}<a class="card-cta" href="${paginaProduto}">Ver oferta</a></div>`;
           adicionarAvaliacaoAoCard(card, oferta.rating, oferta.quantitySold, oferta.reviewCount);
           moverDescontoParaPreco(card);
           adicionarSelosAoCard(card, { ...oferta, discountPct: descontoPct }, maiorDesconto);
