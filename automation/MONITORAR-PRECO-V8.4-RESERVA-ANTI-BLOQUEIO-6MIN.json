@@ -1,0 +1,1000 @@
+{
+  "name": "MONITORAR PREÇO V8.4 - SEM REPETIR + ANTI-BLOQUEIO - 6 MIN",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "config"
+        },
+        "where": {
+          "values": [
+            {
+              "column": "chave",
+              "value": "mercadolivre_cookie"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        304,
+        416
+      ],
+      "id": "608a616b-6796-4d3e-ad2b-907c83661fd5",
+      "name": "BUSCA COOKIE",
+      "credentials": {
+        "postgres": {
+          "id": "WX1vaG8dieEPSmDK",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nunca deixa $input vazio quebrar o node (SELECT pode nao retornar linha\n// nenhuma se a chave \"mercadolivre_cookie\" nao existir na tabela config).\n// O valor do cookie NUNCA e exposto no resultado -- so usamos internamente.\n\nconst items = $input.all();\nconst row = items.length > 0 ? items[0].json : null;\nconst cookie = row && row.valor ? String(row.valor).trim() : '';\n\nreturn [{ json: { cookieValido: !!cookie } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        416
+      ],
+      "id": "f59974b6-4602-4ce4-b6fc-68423d596918",
+      "name": "VERIFICA COOKIE"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "98398d70-a9ba-4559-b43d-7e2c5ff82f05",
+              "leftValue": "={{ $json.cookieValido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        192
+      ],
+      "id": "255df6c7-75cb-4a2b-83db-76b857157626",
+      "name": "COOKIE OK?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Resumo claro de execucao abortada -- nenhuma oferta foi tocada.\nconsole.log('[MONITORAMENTO DE PRECO] Cookie nao configurado; nenhuma oferta foi alterada.');\n\nreturn [{\n  json: {\n    status: 'abortado',\n    motivo: 'Cookie do Mercado Livre nao configurado (tabela config, chave=mercadolivre_cookie). Nenhuma oferta foi alterada.',\n    executadoEm: new Date().toISOString(),\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        32
+      ],
+      "id": "64fb2df2-b7d3-4349-b84b-07bf92afddf7",
+      "name": "RESUMO: cookie ausente"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Zera os contadores do relatorio final no inicio de cada execucao.\nconst stats = $getWorkflowStaticData('global');\nstats.totalVerificado = 0;\nstats.semAlteracao = 0;\nstats.precosAtualizados = 0;\nstats.indisponiveis = 0;\nstats.revisaoManual = 0;\nstats.falhasTemporarias = 0;\nstats.alertasAtingidos = 0;\nstats.detalhes = [];\nreturn [{ json: { ok: true } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        416
+      ],
+      "id": "2d8b21ea-fa97-41ab-847a-b648b3640987",
+      "name": "RESET CONTADORES"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH candidatas AS (\n  SELECT o.id\n  FROM public.offers o\n  WHERE o.is_published = true\n    AND o.availability_status = 'available'\n    AND o.public_url ILIKE '%mercadolivre.com%'\n    AND (\n      o.last_checked_at IS NULL\n      OR (o.last_checked_at AT TIME ZONE 'America/Sao_Paulo')::date\n         < (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date\n    )\n  ORDER BY o.last_checked_at ASC NULLS FIRST\n  FOR UPDATE SKIP LOCKED\n  LIMIT 15\n),\nreservadas AS (\n  UPDATE public.offers o\n  SET last_checked_at = now(),\n      last_check_status = 'checking',\n      last_check_error = NULL\n  FROM candidatas c\n  WHERE o.id = c.id\n  RETURNING o.id AS offer_id,\n            o.product_id,\n            o.external_product_id,\n            o.public_url,\n            o.current_price,\n            o.original_price,\n            o.discount_percent\n)\nSELECT r.offer_id,\n       r.product_id,\n       r.external_product_id,\n       r.public_url,\n       r.current_price,\n       r.original_price,\n       r.discount_percent,\n       p.title AS product_title,\n       p.coupon_text AS coupon_text\nFROM reservadas r\nJOIN public.products p ON p.id = r.product_id\nORDER BY r.offer_id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1024,
+        416
+      ],
+      "id": "e9058946-a6bb-4e5e-bfae-687b4d976cde",
+      "name": "BUSCA OFERTAS ELEGIVEIS",
+      "credentials": {
+        "postgres": {
+          "id": "WX1vaG8dieEPSmDK",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1296,
+        416
+      ],
+      "id": "6638db26-f338-4a55-8b45-e372503f352a",
+      "name": "LOOP PRODUTOS"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Resumo seguro da execucao -- nunca inclui cookie ou dados sensiveis.\nconst stats = $getWorkflowStaticData('global');\n\nconst resumo = {\n  totalVerificado: stats.totalVerificado || 0,\n  semAlteracao: stats.semAlteracao || 0,\n  precosAtualizados: stats.precosAtualizados || 0,\n  indisponiveis: stats.indisponiveis || 0,\n  revisaoManual: stats.revisaoManual || 0,\n  falhasTemporarias: stats.falhasTemporarias || 0,\n  alertasAtingidos: stats.alertasAtingidos || 0,\n  detalhes: stats.detalhes || [],\n  executadoEm: new Date().toISOString(),\n};\n\nconsole.log('[MONITORAMENTO DE PRECO] Resumo da execucao:', JSON.stringify(resumo));\n\nreturn [{ json: resumo }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        192
+      ],
+      "id": "25464590-c8df-4a02-9a64-a74cad1ce3a1",
+      "name": "RELATORIO FINAL"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        192
+      ],
+      "id": "95d6fc0b-2db5-4758-924d-e790997ef4cc",
+      "name": "FIM"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.public_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "cookie",
+              "value": "={{ $('BUSCA COOKIE').item.json.valor }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1552,
+        480
+      ],
+      "id": "6c2d0c2a-43b6-4bc0-b859-e65c29bee66b",
+      "name": "REQUISITA PAGINA PRODUTO",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// PROCESSA RESPOSTA (v8) — preço PDP confirmado + cupom informativo.\n// O cupom nunca substitui o preço atual. Valores mínimos de cupom são tratados\n// como condição de elegibilidade, não como preço do produto.\n\nconst PARSER_VERSION = 'n8n-v8.4-reserva-anti-bloqueio-6min';\nconst original = $('LOOP PRODUTOS').item.json;\nconst http = $input.first().json;\nconst stats = $getWorkflowStaticData('global');\n\nconst clean = (value) => String(value || '')\n  .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')\n  .replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();\n\nconst normalize = (value) => clean(value).toLowerCase()\n  .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')\n  .replace(/[^a-z0-9 ]/g, ' ').replace(/\\s+/g, ' ').trim();\n\nconst similarity = (a, b) => {\n  const left = new Set(normalize(a).split(' ').filter((word) => word.length > 2));\n  const right = new Set(normalize(b).split(' ').filter((word) => word.length > 2));\n  if (!left.size || !right.size) return 0;\n  let same = 0;\n  left.forEach((word) => { if (right.has(word)) same += 1; });\n  return same / new Set([...left, ...right]).size;\n};\n\nconst attr = (tag, name) => {\n  const escaped = name.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n  const match = String(tag || '').match(new RegExp(`\\\\b${escaped}\\\\s*=\\\\s*[\"']([^\"']*)[\"']`, 'i'));\n  return match ? match[1] : null;\n};\n\nconst parseNumber = (value) => {\n  if (value === null || value === undefined) return null;\n  let text = String(value).trim().replace(/[^\\d.,]/g, '');\n  if (!text) return null;\n  if (text.includes(',') && text.includes('.')) text = text.replace(/\\./g, '').replace(',', '.');\n  else if (text.includes(',')) text = text.replace(',', '.');\n  const number = Number.parseFloat(text);\n  return Number.isFinite(number) && number > 0 ? number : null;\n};\n\nconst parseDisplayMoney = (value) => {\n  let text = String(value || '').replace(/[^\\d.,]/g, '');\n  if (!text) return null;\n  if (text.includes(',')) text = text.replace(/\\./g, '').replace(',', '.');\n  else if (/^\\d{1,3}(?:\\.\\d{3})+$/.test(text)) text = text.replace(/\\./g, '');\n  const number = Number.parseFloat(text);\n  return Number.isFinite(number) && number > 0 ? number : null;\n};\n\nconst parseAriaMoney = (value) => {\n  const text = String(value || '').toLowerCase();\n  const reais = text.match(/(\\d[\\d.]*)\\s*reais?/i);\n  if (!reais) return parseNumber(text);\n  const cents = text.match(/(\\d{1,2})\\s*centavos?/i);\n  const whole = reais[1].replace(/\\./g, '');\n  return Number(`${whole}.${cents ? cents[1].padStart(2, '0') : '00'}`);\n};\n\nconst parseAndesMoney = (fragment) => {\n  const fraction = String(fragment || '').match(/andes-money-amount__fraction[^>]*>([^<]+)</i);\n  if (!fraction) return null;\n  const cents = String(fragment).match(/andes-money-amount__cents[^>]*>([^<]+)</i);\n  const whole = String(fraction[1]).replace(/\\D/g, '');\n  const decimal = cents ? String(cents[1]).replace(/\\D/g, '').padEnd(2, '0').slice(0, 2) : '00';\n  return whole ? Number(`${whole}.${decimal}`) : null;\n};\n\nconst money = (value) => Number(value).toLocaleString('pt-BR', {\n  style: 'currency', currency: 'BRL',\n});\n\nconst extractElement = (html, startIndex) => {\n  const source = String(html || '');\n  const openEnd = source.indexOf('>', startIndex);\n  if (openEnd < 0) return '';\n  const openTag = source.slice(startIndex, openEnd + 1);\n  const tagName = (openTag.match(/^<\\s*([a-z0-9-]+)/i) || [])[1];\n  if (!tagName) return '';\n  const matcher = new RegExp(`<\\\\/?${tagName}\\\\b[^>]*>`, 'gi');\n  matcher.lastIndex = startIndex;\n  let depth = 0;\n  let match;\n  while ((match = matcher.exec(source))) {\n    if (/^<\\//.test(match[0])) depth -= 1;\n    else if (!/\\/>$/.test(match[0])) depth += 1;\n    if (depth === 0) return source.slice(startIndex, matcher.lastIndex);\n  }\n  return source.slice(startIndex, Math.min(source.length, startIndex + 16000));\n};\n\nconst findElementBy = (html, pattern) => {\n  const match = String(html || '').match(pattern);\n  return match && Number.isInteger(match.index) ? extractElement(html, match.index) : '';\n};\n\nconst findElementsBy = (html, pattern) => {\n  const output = [];\n  const matcher = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`);\n  let match;\n  while ((match = matcher.exec(String(html || '')))) {\n    const element = extractElement(html, match.index);\n    if (element) output.push(element);\n  }\n  return output;\n};\n\nconst getMetaPrice = (block) => {\n  const tags = String(block || '').match(/<meta\\b[^>]*>/gi) || [];\n  for (const tag of tags) {\n    if (String(attr(tag, 'itemprop')).toLowerCase() === 'price') {\n      const value = parseNumber(attr(tag, 'content'));\n      if (value) return value;\n    }\n  }\n  return null;\n};\n\nconst getOfferAriaPrice = (block) => {\n  const tags = String(block || '').match(/<span\\b[^>]*>/gi) || [];\n  for (const tag of tags) {\n    if (String(attr(tag, 'itemprop')).toLowerCase() === 'offers') {\n      const value = parseAriaMoney(attr(tag, 'aria-label'));\n      if (value) return value;\n    }\n  }\n  return null;\n};\n\n// Captura somente regras explícitas de cupom. \"Ver cupons disponíveis\" por si\n// só não é suficiente para registrar nada e nunca é usado no preço principal.\nconst extractCoupon = (html, priceBlock) => {\n  const rawHtml = String(html || '');\n  const componentPattern = /<(?:div|span|button|a|p)\\b[^>]*class=[\"'][^\"']*(?:ui-vpp-coupons-awareness|coupon|coupons|price-breakdown)[^\"']*[\"'][^>]*>/i;\n  const windows = [\n    ...findElementsBy(rawHtml, componentPattern),\n    ...findElementsBy(String(priceBlock || ''), componentPattern),\n  ];\n\n  // Algumas ofertas trazem \"Compre R$ X e ganhe Y\" dentro do componente de cupom,\n  // porém sem escrever a palavra \"cupom\" no texto visível. Por isso, \"compre\"\n  // também abre uma janela local de análise.\n  for (const match of rawHtml.matchAll(/(?:cupom|coupon|compre)/gi)) {\n    const index = match.index || 0;\n    windows.push(rawHtml.slice(Math.max(0, index - 900), Math.min(rawHtml.length, index + 1500)));\n  }\n\n  const seen = new Set();\n  const foundCoupon = (text, kind, source) => ({ detected: true, text, kind, source });\n\n  for (const window of windows) {\n    const text = clean(window);\n    if (!text || seen.has(text)) continue;\n    seen.add(text);\n    // \"Compre R$ X e ganhe Y\" é uma condição de cupom mesmo quando a palavra\n    // \"cupom\" não aparece no trecho de HTML capturado.\n    if (!/(cupom|coupon|compre\\s*R\\$)/i.test(text)) continue;\n\n    let found = text.match(/compre\\s*(R\\$\\s*[\\d.,]+)\\s*e\\s*ganhe\\s*(R\\$\\s*[\\d.,]+)\\s*off/i);\n    if (found) {\n      const minimum = parseDisplayMoney(found[1]);\n      const discount = parseDisplayMoney(found[2]);\n      if (minimum && discount) {\n        return foundCoupon(\n          'Cupom: ' + money(discount) + ' OFF em compras a partir de ' + money(minimum),\n          'valor_minimo_valor_off',\n          'texto_cupom',\n        );\n      }\n    }\n\n    found = text.match(/compre\\s*(R\\$\\s*[\\d.,]+)\\s*e\\s*ganhe\\s*(\\d+(?:[.,]\\d+)?)\\s*%\\s*off/i);\n    if (found) {\n      const minimum = parseDisplayMoney(found[1]);\n      const percent = Number(found[2].replace(',', '.'));\n      if (minimum && percent > 0) {\n        return foundCoupon(\n          'Cupom: ' + percent + '% OFF em compras a partir de ' + money(minimum),\n          'valor_minimo_percentual_off',\n          'texto_cupom',\n        );\n      }\n    }\n\n    found = text.match(/(R\\$\\s*[\\d.,]+)\\s*(\\d+(?:[.,]\\d+)?)\\s*%\\s*(?:off|de desconto)\\s*com\\s+cupom/i);\n    if (found) {\n      const price = parseDisplayMoney(found[1]);\n      const percent = Number(found[2].replace(',', '.'));\n      if (price && percent > 0) {\n        return foundCoupon(\n          'Preço com cupom: ' + money(price) + ' · Oferta com cupom: ' + percent + '% OFF',\n          'preco_com_percentual',\n          'bloco_preco_cupom',\n        );\n      }\n    }\n\n    found = text.match(/(R\\$\\s*[\\d.,]+)\\s+com\\s+cupom\\s+por\\s+seguir\\s+a\\s+loja/i);\n    if (found) {\n      const price = parseDisplayMoney(found[1]);\n      if (price) {\n        return foundCoupon(\n          'Preço com cupom: ' + money(price) + ' · Condição: seguir a loja',\n          'preco_por_seguir_loja',\n          'bloco_preco_cupom',\n        );\n      }\n    }\n\n    found = text.match(/(R\\$\\s*[\\d.,]+)\\s*(?:off|de desconto)\\s*(?:com\\s+)?cupom/i);\n    if (found) {\n      const discount = parseDisplayMoney(found[1]);\n      if (discount) return foundCoupon('Cupom: ' + money(discount) + ' OFF', 'valor_off', 'texto_cupom');\n    }\n\n    found = text.match(/(\\d+(?:[.,]\\d+)?)\\s*%\\s*(?:off|de desconto)\\s*(?:com\\s+)?cupom/i);\n    if (found) {\n      const percent = Number(found[1].replace(',', '.'));\n      if (percent > 0) return foundCoupon('Cupom: ' + percent + '% OFF', 'percentual_off', 'texto_cupom');\n    }\n\n    found = text.match(/(R\\$\\s*[\\d.,]+)\\s+com\\s+cupom/i);\n    if (found) {\n      const price = parseDisplayMoney(found[1]);\n      if (price) return foundCoupon('Preço com cupom: ' + money(price), 'preco_com_cupom', 'bloco_preco_cupom');\n    }\n  }\n\n  return { detected: false, text: '', kind: null, source: null };\n};\n\nconst route = (fields) => {\n  const result = {\n    offer_id: original.offer_id, product_id: original.product_id,\n    external_product_id: original.external_product_id, product_title: original.product_title,\n    public_url: original.public_url,\n    precoAntigo: original.current_price == null ? null : Number(original.current_price),\n    precoOriginalAntigo: original.original_price == null ? null : Number(original.original_price),\n    parserVersion: PARSER_VERSION, ...fields,\n  };\n  stats.totalVerificado = (stats.totalVerificado || 0) + 1;\n  stats.detalhes = stats.detalhes || [];\n  stats.detalhes.push({\n    produto: result.product_title, url: result.public_url, precoSalvo: result.precoAntigo,\n    precoDetectado: result.detectedCurrentPrice ?? null,\n    precoOriginalDetectado: result.detectedOriginalPrice ?? null,\n    cupom: result.couponText ?? null, fonte: result.priceSource ?? null,\n    rota: result.rota, motivo: result.motivo ?? null,\n  });\n  return [{ json: result }];\n};\n\nconst statusCode = Number(http.statusCode || 200);\nconst html = typeof (http.body ?? http.data) === 'string' ? (http.body ?? http.data) : '';\nif (http.error || !html || html.length < 500) return route({ rota: 'falha_temporaria', outcome: 'error', httpStatus: statusCode, motivo: 'HTML vazio, incompleto ou erro de rede' });\nif (statusCode === 404) return route({ rota: 'indisponivel', outcome: 'unavailable', httpStatus: statusCode, motivo: 'Página retornou HTTP 404' });\nif (statusCode < 200 || statusCode >= 300 || /captcha|perimeterx|g-recaptcha|verificação de segurança|just a moment|suspicious[-_ ]traffic|suspicious-traffic-frontend/i.test(html)) return route({ rota: 'falha_temporaria', outcome: 'error', httpStatus: statusCode, motivo: /suspicious[-_ ]traffic|suspicious-traffic-frontend/i.test(html) ? 'Mercado Livre retornou bloqueio de tráfego suspeito' : (statusCode === 403 ? 'HTTP 403/CAPTCHA' : 'Resposta HTTP inesperada ou desafio de segurança') });\n\nconst h1 = String(html).match(/<h1\\b[^>]*class=[\"'][^\"']*ui-pdp-title[^\"']*[\"'][^>]*>([\\s\\S]*?)<\\/h1>/i);\nconst og = String(html).match(/<meta\\b[^>]*property=[\"']og:title[\"'][^>]*content=[\"']([^\"']+)[\"'][^>]*>/i) || String(html).match(/<meta\\b[^>]*content=[\"']([^\"']+)[\"'][^>]*property=[\"']og:title[\"'][^>]*>/i);\nconst pageTitle = h1 ? clean(h1[1]) : (og ? clean(og[1]) : null);\nconst titleScore = similarity(pageTitle, original.product_title);\n// Páginas de catálogo possuem dois identificadores legítimos diferentes:\n// /p/MLB... identifica o produto do catálogo e wid=MLB... identifica o anúncio.\n// A validação abaixo compara cada tipo apenas com seu equivalente.\nconst sourceUrl = String(original.public_url || '');\nconst normalizeMlb = (value) => String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');\nconst urlCatalogMlb = ((sourceUrl.match(/\\/p\\/(MLB\\d+)/i) || [])[1]) || null;\nconst urlListingMlb = ((sourceUrl.match(/[?&]wid=(MLB\\d+)/i) || [])[1])\n  || (/^MLB-?\\d+$/i.test(String(original.external_product_id || '')) ? String(original.external_product_id) : null);\n\nconst pageCatalogIds = Array.from(String(html).matchAll(/\\/p\\/(MLB\\d+)/gi), match => normalizeMlb(match[1]));\nconst pageListingIds = Array.from(String(html).matchAll(/(?:[?&]wid=|bookmark\\/add\\/)(MLB\\d+)/gi), match => normalizeMlb(match[1]));\nconst sameCatalogMlb = Boolean(urlCatalogMlb && pageCatalogIds.includes(normalizeMlb(urlCatalogMlb)));\nconst sameListingMlb = Boolean(urlListingMlb && pageListingIds.includes(normalizeMlb(urlListingMlb)));\nconst sameMlb = sameCatalogMlb || sameListingMlb;\nif (!pageTitle || (titleScore < 0.60 && !sameMlb)) return route({ rota: 'revisao_manual', outcome: 'review', httpStatus: statusCode, pageTitle, motivo: 'Título/ID do PDP não corresponde com segurança ao produto cadastrado' });\n\nconst priceBlock = findElementBy(html, /<div\\b[^>]*\\bid=[\"']price[\"'][^>]*>/i);\nconst unavailableText = /publica[cç][aã]o (est[aá] )?pausada|an[uú]ncio (foi )?(finalizado|encerrado|removido)|este produto est[aá] indispon[ií]vel|produto est[aá] indispon[ií]vel|n[aã]o encontramos essa p[aá]gina/i;\nif (!priceBlock) {\n  if (unavailableText.test(html)) return route({ rota: 'indisponivel', outcome: 'unavailable', httpStatus: statusCode, pageTitle, motivo: 'Indisponibilidade explícita e ausência do bloco principal de preço' });\n  return route({ rota: 'revisao_manual', outcome: 'review', httpStatus: statusCode, pageTitle, motivo: 'Bloco #price do PDP não foi encontrado; preço não será adivinhado' });\n}\n\nconst secondLineBlocks = findElementsBy(priceBlock, /<div\\b[^>]*class=[\"'][^\"']*ui-pdp-price__second-line[^\"']*[\"'][^>]*>/i);\nconst actualBlock = secondLineBlocks.find((block) => /itemprop=[\"']offers[\"']/i.test(block)) || '';\nif (!actualBlock || /R\\$\\s*\\d[\\d.,]*\\s*(?:-|a|até)\\s*R\\$/i.test(clean(actualBlock))) return route({ rota: 'revisao_manual', outcome: 'review', httpStatus: statusCode, pageTitle, motivo: 'Preço principal ausente ou apresentado como faixa/variação' });\n\nconst metaPrice = getMetaPrice(actualBlock);\nconst ariaPrice = getOfferAriaPrice(actualBlock);\nif (!metaPrice && !ariaPrice) return route({ rota: 'revisao_manual', outcome: 'review', httpStatus: statusCode, pageTitle, motivo: 'Preço principal sem meta itemprop=price e sem aria-label confirmável' });\nif (metaPrice && ariaPrice && Math.abs(metaPrice - ariaPrice) > 0.01) return route({ rota: 'revisao_manual', outcome: 'review', httpStatus: statusCode, pageTitle, detectedCurrentPrice: metaPrice, priceSource: 'pdp_meta_vs_aria_divergente', motivo: 'Meta de preço e rótulo visual do preço principal divergem' });\n\nconst precoNovo = metaPrice || ariaPrice;\nlet priceSource = metaPrice && ariaPrice ? 'pdp_meta_itemprop_price+aria_label_confirmados' : metaPrice ? 'pdp_meta_itemprop_price_confirmado' : 'pdp_aria_label_confirmado';\nconst couponV82Text = extractCouponV82(html, priceBlock);\nconst coupon = couponV82Text\n  ? {\n      detected: true,\n      text: couponV82Text,\n      kind: 'v8_2_texto_confirmado',\n      source: 'texto_cupom_v8_2',\n    }\n  : extractCoupon(html, priceBlock);\nif (coupon.detected) priceSource += '+cupom_informativo';\n\nconst oldTag = (priceBlock.match(/<s\\b[^>]*class=[\"'][^\"']*ui-pdp-price__original-value[^\"']*[\"'][^>]*>[\\s\\S]*?<\\/s>/i) || [])[0] || '';\nlet precoOriginalNovo = parseAriaMoney(attr(oldTag, 'aria-label')) || parseAndesMoney(oldTag);\nif (!precoOriginalNovo || precoOriginalNovo <= precoNovo) precoOriginalNovo = null;\n\nconst precoAntigo = Number(original.current_price);\nconst highVariation = Number.isFinite(precoAntigo) && precoAntigo > 0 && (precoNovo > precoAntigo * 3 || precoNovo < precoAntigo / 3);\nconst strongPriceConfirmation = Boolean(metaPrice && ariaPrice);\nif (highVariation && !strongPriceConfirmation) return route({ rota: 'revisao_manual', outcome: 'review', httpStatus: statusCode, pageTitle, detectedCurrentPrice: precoNovo, detectedOriginalPrice: precoOriginalNovo, couponDetected: coupon.detected, couponText: coupon.text, couponKind: coupon.kind, couponSource: coupon.source, priceSource, motivo: 'Variação superior a 3x sem dupla confirmação no bloco principal' });\nif (highVariation) priceSource += '+variacao_alta_confirmada';\n\nconst discountPercentNovo = precoOriginalNovo ? Math.floor((1 - precoNovo / precoOriginalNovo) * 100) : 0;\nconst precoAtualMudou = !Number.isFinite(precoAntigo) || Math.abs(precoNovo - precoAntigo) > 0.001;\nconst originalAntigo = original.original_price == null ? null : Number(original.original_price);\nconst precoOriginalMudou = (precoOriginalNovo == null && originalAntigo != null) || (precoOriginalNovo != null && (!Number.isFinite(originalAntigo) || Math.abs(precoOriginalNovo - originalAntigo) > 0.001));\nconst descontoAntigo = original.discount_percent == null ? 0 : Number(original.discount_percent);\nconst descontoMudou = !Number.isFinite(descontoAntigo) || Math.abs(discountPercentNovo - descontoAntigo) > 0.001;\nconst changed = precoAtualMudou || precoOriginalMudou || descontoMudou;\nconst motivos = [];\nif (precoAtualMudou) motivos.push(Number.isFinite(precoAntigo) ? `Preço atual: ${money(precoAntigo)} → ${money(precoNovo)}` : `Preço atual registrado: ${money(precoNovo)}`);\nif (precoOriginalMudou) {\n  if (precoOriginalNovo == null) motivos.push(`Preço de referência removido (era ${money(originalAntigo)})`);\n  else if (Number.isFinite(originalAntigo)) motivos.push(`Preço de referência: ${money(originalAntigo)} → ${money(precoOriginalNovo)}`);\n  else motivos.push(`Preço de referência registrado: ${money(precoOriginalNovo)}`);\n}\nif (descontoMudou) motivos.push(`Desconto recalculado: ${Math.round(descontoAntigo)}% → ${Math.round(discountPercentNovo)}%`);\nif (coupon.detected) motivos.push(`Cupom confirmado: ${coupon.text}`);\n\nreturn route({\n  rota: changed ? 'atualizar_preco' : 'sem_alteracao', outcome: changed ? 'updated' : 'unchanged',\n  httpStatus: statusCode, pageTitle, precoNovo, precoOriginalNovo, discountPercentNovo,\n  detectedCurrentPrice: precoNovo, detectedOriginalPrice: precoOriginalNovo,\n  couponDetected: coupon.detected, couponText: coupon.text, couponKind: coupon.kind, couponSource: coupon.source,\n  priceSource, motivo: changed ? motivos.join(' · ') : (coupon.detected ? `Sem alteração de preço · ${motivos[motivos.length - 1]}` : 'Sem alteração: preço atual, referência e desconto confirmados'),\n});\n\n\n// V8.2 — leitura complementar e exclusivamente informativa de cupons.\n// Nunca altera precoNovo, precoOriginalNovo nem a rota de preço.\nfunction extractCouponV82(html, priceBlock) {\n  const raw = String(html || '');\n  if (!raw) return '';\n\n  const couponPattern = /<(?:div|span|button)\\b[^>]*class=[\"'][^\"']*ui-vpp-coupons-awareness(?:__checkbox-label)?[^\"']*[\"'][^>]*>/i;\n  const windows = [\n    ...findElementsBy(raw, couponPattern),\n    ...findElementsBy(String(priceBlock || ''), couponPattern),\n  ];\n\n  // Fallback local para layouts em que o contêiner muda de classe.\n  for (const match of raw.matchAll(/(?:com\\s+cupom|ganhe[\\s\\S]{0,80}(?:off|desconto))/gi)) {\n    const index = match.index || 0;\n    windows.push(raw.slice(Math.max(0, index - 1800), Math.min(raw.length, index + 1800)));\n  }\n\n  const normalizeMoney = (integerPart, centsPart) => {\n    const integer = String(integerPart || '').replace(/\\D/g, '');\n    const cents = centsPart == null ? '00' : String(centsPart).replace(/\\D/g, '').padEnd(2, '0').slice(0, 2);\n    if (!integer) return '';\n    return 'R$ ' + Number(integer).toLocaleString('pt-BR') + ',' + cents;\n  };\n\n  const moneyFromAria = (block) => {\n    const labels = [...String(block || '').matchAll(/aria-label=[\"']([^\"']+)[\"']/gi)].map((entry) => entry[1]);\n    const detailed = labels.find((label) => /\\d[\\d.]*\\s*reais?\\s+com\\s+\\d{1,2}\\s*centavos?/i.test(label));\n    const simple = labels.find((label) => /\\d[\\d.]*\\s*reais?/i.test(label));\n    const label = detailed || simple;\n    if (!label) return '';\n    const match = label.match(/(\\d[\\d.]*)\\s*reais?(?:\\s+com\\s+(\\d{1,2})\\s*centavos?)?/i);\n    return match ? normalizeMoney(match[1], match[2]) : '';\n  };\n\n  const visibleText = (block) => String(block || '')\n    .replace(/&nbsp;|&#160;/gi, ' ')\n    .replace(/&amp;/gi, '&')\n    .replace(/<[^>]*>/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n\n  const seen = new Set();\n  for (const block of windows) {\n    if (!block || seen.has(block)) continue;\n    seen.add(block);\n    const text = visibleText(block);\n    if (!/(cupom|compre\\s*r\\$)/i.test(text)) continue;\n\n    let match = text.match(/compre\\s*r\\$\\s*([\\d.]+)(?:\\s*[,\\.]\\s*(\\d{1,2}))?\\s*e\\s*ganhe\\s*r\\$\\s*([\\d.]+)(?:\\s*[,\\.]\\s*(\\d{1,2}))?\\s*(?:off|de\\s+desconto)/i);\n    if (match) {\n      return 'Cupom: ' + normalizeMoney(match[3], match[4]) + ' OFF em compras a partir de ' + normalizeMoney(match[1], match[2]);\n    }\n\n    match = text.match(/compre\\s*r\\$\\s*([\\d.]+)(?:\\s*[,\\.]\\s*(\\d{1,2}))?\\s*e\\s*ganhe\\s*(\\d{1,3})\\s*%\\s*(?:off|de\\s+desconto)/i);\n    if (match) {\n      return 'Cupom: ' + match[3] + '% OFF em compras a partir de ' + normalizeMoney(match[1], match[2]);\n    }\n\n    if (/com\\s+cupom/i.test(text)) {\n      // O aria-label do componente monetário é a fonte prioritária porque mantém\n      // centavos que o texto acessível resumido do botão pode omitir.\n      const ariaMoney = moneyFromAria(block);\n      const visibleMatch = text.match(/r\\$\\s*([\\d.]+)(?:\\s*[,\\.]\\s*(\\d{1,2}))?\\s+com\\s+cupom/i);\n      const couponPrice = ariaMoney || (visibleMatch ? normalizeMoney(visibleMatch[1], visibleMatch[2]) : '');\n      if (couponPrice) {\n        const followsStore = /com\\s+cupom\\s+por\\s+seguir\\s+(?:a\\s+)?loja/i.test(text);\n        return 'Preço com cupom: ' + couponPrice + (followsStore ? ' · Condição: seguir a loja' : '');\n      }\n    }\n\n    match = text.match(/(\\d{1,3})\\s*%\\s*(?:off|de\\s+desconto)\\s+com\\s+cupom/i);\n    if (match) return 'Cupom: ' + match[1] + '% OFF';\n  }\n\n  return '';\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        480
+      ],
+      "id": "0a165816-a522-4270-ba9e-3ba6d2be18bb",
+      "name": "PROCESSA RESPOSTA"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4054724a-99dc-4e3d-b52a-80f431610fc2",
+                    "leftValue": "={{ String($json.rota ?? '').trim() }}",
+                    "rightValue": "atualizar_preco",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "atualizar_preco"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "8c81cdd4-b877-4dff-98a5-237ff27e8076",
+                    "leftValue": "={{ String($json.rota ?? '').trim() }}",
+                    "rightValue": "sem_alteracao",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sem_alteracao"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d29abb80-4b54-4551-82d7-810d8bdff27e",
+                    "leftValue": "={{ String($json.rota ?? '').trim() }}",
+                    "rightValue": "revisao_manual",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "revisao_manual"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "946a49ad-abfb-4bf4-9c94-b97b4ef59ea1",
+                    "leftValue": "={{ String($json.rota ?? '').trim() }}",
+                    "rightValue": "indisponivel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "indisponivel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e7ca422f-12a8-45d9-a30a-54d3d37904cd",
+                    "leftValue": "={{ String($json.rota ?? '').trim() }}",
+                    "rightValue": "falha_temporaria",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "falha_temporaria"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2032,
+        480
+      ],
+      "id": "555a9fad-d881-4421-9333-58f281701f7d",
+      "name": "ROTEIA RESULTADO"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH oferta_atualizada AS (\n  UPDATE public.offers\n  SET current_price = {{ $('PROCESSA RESPOSTA').item.json.precoNovo }},\n      original_price = {{ $('PROCESSA RESPOSTA').item.json.precoOriginalNovo !== null && $('PROCESSA RESPOSTA').item.json.precoOriginalNovo !== undefined ? $('PROCESSA RESPOSTA').item.json.precoOriginalNovo : 'NULL' }},\n      discount_percent = {{ $('PROCESSA RESPOSTA').item.json.discountPercentNovo !== null && $('PROCESSA RESPOSTA').item.json.discountPercentNovo !== undefined ? $('PROCESSA RESPOSTA').item.json.discountPercentNovo : 0 }},\n      availability_status = 'available',\n      last_checked_at = now(),\n      last_check_status = 'ok',\n      last_check_error = NULL,\n      consecutive_check_failures = 0\n  WHERE id = '{{ $('PROCESSA RESPOSTA').item.json.offer_id }}'\n  RETURNING product_id, id\n),\ncupom_atualizado AS (\n  UPDATE public.products p\n  SET coupon_text = NULLIF('{{ String($('PROCESSA RESPOSTA').item.json.couponText || '').replace(/'/g, \"''\") }}', '')\n  FROM oferta_atualizada o\n  WHERE p.id = o.product_id\n  RETURNING p.id\n)\nSELECT id FROM oferta_atualizada",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2288,
+        160
+      ],
+      "id": "078f89b9-1999-431d-aa37-279c2707efe4",
+      "name": "ATUALIZA OFERTA (preco mudou)",
+      "credentials": {
+        "postgres": {
+          "id": "WX1vaG8dieEPSmDK",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "price_history"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "offer_id": "={{ $('PROCESSA RESPOSTA').item.json.offer_id }}",
+            "price": "={{ $('PROCESSA RESPOSTA').item.json.precoNovo }}",
+            "original_price": "={{ $('PROCESSA RESPOSTA').item.json.precoOriginalNovo }}",
+            "recorded_at": "={{ $now.toISO() }}",
+            "source": "automacao-n8n-v8.2.1-cupons-centavos",
+            "change_reason": "={{ $('PROCESSA RESPOSTA').item.json.motivo || null }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2528,
+        160
+      ],
+      "id": "a314c005-066e-43d5-9686-38fecbc425ad",
+      "name": "GRAVA HISTORICO DE PRECO",
+      "credentials": {
+        "postgres": {
+          "id": "WX1vaG8dieEPSmDK",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH alertas_atualizados AS (\n  UPDATE public.user_price_alerts\n  SET is_active = false,\n      triggered_at = now()\n  WHERE offer_id = '{{ $('PROCESSA RESPOSTA').item.json.offer_id }}'\n    AND is_active = true\n    AND target_price >= {{ $('PROCESSA RESPOSTA').item.json.precoNovo }}\n  RETURNING id\n)\nSELECT count(*)::integer AS alertas_atingidos\nFROM alertas_atualizados",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2768,
+        160
+      ],
+      "id": "40605cd8-e135-49ee-86db-9604b59005a9",
+      "name": "ATUALIZA ALERTAS ATINGIDOS",
+      "credentials": {
+        "postgres": {
+          "id": "WX1vaG8dieEPSmDK",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const stats = $getWorkflowStaticData('global');\nconst alertasAtingidosNoItem = $json.alertas_atingidos !== undefined && $json.alertas_atingidos !== null\n  ? $json.alertas_atingidos\n  : 0;\nstats.precosAtualizados = (stats.precosAtualizados || 0) + 1;\nstats.alertasAtingidos = (stats.alertasAtingidos || 0) + alertasAtingidosNoItem;\nreturn [{ json: { ok: true } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        160
+      ],
+      "id": "3d90cfd9-eb2b-4ece-937b-1818c851a25f",
+      "name": "CONTA: preco atualizado"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH oferta_verificada AS (\n  UPDATE public.offers\n  SET availability_status = 'available',\n      last_checked_at = now(),\n      last_check_status = 'ok',\n      last_check_error = NULL,\n      consecutive_check_failures = 0\n  WHERE id = '{{ $('PROCESSA RESPOSTA').item.json.offer_id }}'\n  RETURNING product_id, id\n),\ncupom_atualizado AS (\n  UPDATE public.products p\n  SET coupon_text = NULLIF('{{ String($('PROCESSA RESPOSTA').item.json.couponText || '').replace(/'/g, \"''\") }}', '')\n  FROM oferta_verificada o\n  WHERE p.id = o.product_id\n  RETURNING p.id\n)\nSELECT id FROM oferta_verificada",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2288,
+        352
+      ],
+      "id": "edcc4661-0c67-4b59-9d9a-353c4087b2bc",
+      "name": "MARCA COMO VERIFICADO",
+      "credentials": {
+        "postgres": {
+          "id": "WX1vaG8dieEPSmDK",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const stats = $getWorkflowStaticData('global');\nstats.semAlteracao = (stats.semAlteracao || 0) + 1;\nreturn [{ json: { ok: true } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2528,
+        352
+      ],
+      "id": "03ee6f53-aa1d-4af7-997b-2ba9c246e0fa",
+      "name": "CONTA: sem alteracao"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.offers\nSET availability_status = 'unavailable',\n    is_published = false,\n    last_checked_at = now(),\n    last_check_status = 'unavailable',\n    last_check_error = '{{ ($('PROCESSA RESPOSTA').item.json.motivo || \"\").replace(/'/g, \"''\") }}',\n    consecutive_check_failures = 0\nWHERE id = '{{ $('PROCESSA RESPOSTA').item.json.offer_id }}'\nRETURNING id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2288,
+        560
+      ],
+      "id": "ca3909ff-6348-4326-97d9-358e74af1d56",
+      "name": "MARCA COMO INDISPONIVEL",
+      "credentials": {
+        "postgres": {
+          "id": "WX1vaG8dieEPSmDK",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const stats = $getWorkflowStaticData('global');\nstats.indisponiveis = (stats.indisponiveis || 0) + 1;\nreturn [{ json: { ok: true } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2528,
+        592
+      ],
+      "id": "abd2bfc7-2524-438c-a6dd-86a43f41ac42",
+      "name": "CONTA: indisponivel"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.offers\nSET last_checked_at = now(),\n    last_check_status = 'error',\n    last_check_error = '{{ ($('PROCESSA RESPOSTA').item.json.motivo || \"\").replace(/'/g, \"''\") }}',\n    consecutive_check_failures = consecutive_check_failures + 1\nWHERE id = '{{ $('PROCESSA RESPOSTA').item.json.offer_id }}'\nRETURNING id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2304,
+        992
+      ],
+      "id": "3720325f-b9e2-4ac5-a87c-b775ff3c19a9",
+      "name": "REGISTRA FALHA TEMPORARIA",
+      "credentials": {
+        "postgres": {
+          "id": "WX1vaG8dieEPSmDK",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const stats = $getWorkflowStaticData('global');\nstats.falhasTemporarias = (stats.falhasTemporarias || 0) + 1;\nreturn [{ json: { ok: true } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2544,
+        928
+      ],
+      "id": "394b5e22-6db0-41d0-9527-a2a0a1af4f0f",
+      "name": "CONTA: falha temporaria"
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3248,
+        464
+      ],
+      "id": "e6cd2f2e-4972-435d-b516-16ac7a83d9f5",
+      "name": "PAUSA ENTRE PRODUTOS",
+      "webhookId": "10db6975-37b0-4d66-96be-0c1a092d7f66"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.offer_monitoring_logs\n  (offer_id, checked_at, outcome, product_title, page_title, public_url,\n   stored_current_price, detected_current_price, detected_original_price,\n   price_source, parser_version, reason, http_status)\nVALUES (\n  '{{ $('PROCESSA RESPOSTA').item.json.offer_id }}',\n  now(),\n  '{{ $('PROCESSA RESPOSTA').item.json.rota }}',\n  '{{ ($('PROCESSA RESPOSTA').item.json.product_title || \"\").replace(/'/g, \"''\") }}',\n  {{ $('PROCESSA RESPOSTA').item.json.pageTitle ? `'${$('PROCESSA RESPOSTA').item.json.pageTitle.replace(/'/g, \"''\")}'` : 'NULL' }},\n  '{{ $('PROCESSA RESPOSTA').item.json.public_url }}',\n  {{ $('LOOP PRODUTOS').item.json.current_price !== undefined && $('LOOP PRODUTOS').item.json.current_price !== null ? $('LOOP PRODUTOS').item.json.current_price : 'NULL' }},\n  {{ $('PROCESSA RESPOSTA').item.json.detectedCurrentPrice !== undefined && $('PROCESSA RESPOSTA').item.json.detectedCurrentPrice !== null ? $('PROCESSA RESPOSTA').item.json.detectedCurrentPrice : 'NULL' }},\n  {{ $('PROCESSA RESPOSTA').item.json.detectedOriginalPrice !== undefined && $('PROCESSA RESPOSTA').item.json.detectedOriginalPrice !== null ? $('PROCESSA RESPOSTA').item.json.detectedOriginalPrice : 'NULL' }},\n  {{ $('PROCESSA RESPOSTA').item.json.priceSource ? `'${$('PROCESSA RESPOSTA').item.json.priceSource}'` : 'NULL' }},\n  '{{ $('PROCESSA RESPOSTA').item.json.parserVersion }}',\n  {{ $('PROCESSA RESPOSTA').item.json.motivo ? `'${String($('PROCESSA RESPOSTA').item.json.motivo).replace(/'/g, \"''\")}'` : 'NULL' }},\n  {{ $('PROCESSA RESPOSTA').item.json.httpStatus !== undefined && $('PROCESSA RESPOSTA').item.json.httpStatus !== null ? $('PROCESSA RESPOSTA').item.json.httpStatus : 'NULL' }}\n)\nRETURNING id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1904,
+        480
+      ],
+      "id": "6d6b480a-6234-42a8-9b98-66e0d55923fe",
+      "name": "REGISTRA LOG",
+      "credentials": {
+        "postgres": {
+          "id": "WX1vaG8dieEPSmDK",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.offers\nSET last_checked_at = now(),\n    last_check_status = 'revisao_manual',\n    last_check_error = '{{ ($('PROCESSA RESPOSTA').item.json.motivo || \"\").replace(/'/g, \"''\") }}'\nWHERE id = '{{ $('PROCESSA RESPOSTA').item.json.offer_id }}'\nRETURNING id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2288,
+        800
+      ],
+      "id": "de1ab024-fa04-4f4f-aa4c-9abce51aa6b6",
+      "name": "MARCA COMO REVISAO MANUAL",
+      "credentials": {
+        "postgres": {
+          "id": "WX1vaG8dieEPSmDK",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const stats = $getWorkflowStaticData('global');\nstats.revisaoManual = (stats.revisaoManual || 0) + 1;\nreturn [{ json: { ok: true } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2528,
+        784
+      ],
+      "id": "8b664cfc-b97b-47a3-b72d-73af78771022",
+      "name": "CONTA: revisao manual"
+    },
+    {
+      "parameters": {
+        "content": "MONITORAR PREÇOS PRODUTOS",
+        "height": 1200,
+        "width": 3536,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "22a1a65a-792f-488f-936d-0417fc75401c",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */6 * * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        416
+      ],
+      "id": "dd96ff63-b172-4e5f-82f6-5288e200ee11",
+      "name": "ACIONA A CADA 6 MINUTOS",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": false
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "BUSCA COOKIE": {
+      "main": [
+        [
+          {
+            "node": "VERIFICA COOKIE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VERIFICA COOKIE": {
+      "main": [
+        [
+          {
+            "node": "COOKIE OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "COOKIE OK?": {
+      "main": [
+        [
+          {
+            "node": "RESET CONTADORES",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RESUMO: cookie ausente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RESUMO: cookie ausente": {
+      "main": [
+        [
+          {
+            "node": "FIM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RESET CONTADORES": {
+      "main": [
+        [
+          {
+            "node": "BUSCA OFERTAS ELEGIVEIS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BUSCA OFERTAS ELEGIVEIS": {
+      "main": [
+        [
+          {
+            "node": "LOOP PRODUTOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LOOP PRODUTOS": {
+      "main": [
+        [
+          {
+            "node": "RELATORIO FINAL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "REQUISITA PAGINA PRODUTO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RELATORIO FINAL": {
+      "main": [
+        [
+          {
+            "node": "FIM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REQUISITA PAGINA PRODUTO": {
+      "main": [
+        [
+          {
+            "node": "PROCESSA RESPOSTA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PROCESSA RESPOSTA": {
+      "main": [
+        [
+          {
+            "node": "ROTEIA RESULTADO",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "REGISTRA LOG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROTEIA RESULTADO": {
+      "main": [
+        [
+          {
+            "node": "ATUALIZA OFERTA (preco mudou)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MARCA COMO VERIFICADO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MARCA COMO REVISAO MANUAL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MARCA COMO INDISPONIVEL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "REGISTRA FALHA TEMPORARIA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ATUALIZA OFERTA (preco mudou)": {
+      "main": [
+        [
+          {
+            "node": "GRAVA HISTORICO DE PRECO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GRAVA HISTORICO DE PRECO": {
+      "main": [
+        [
+          {
+            "node": "ATUALIZA ALERTAS ATINGIDOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ATUALIZA ALERTAS ATINGIDOS": {
+      "main": [
+        [
+          {
+            "node": "CONTA: preco atualizado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CONTA: preco atualizado": {
+      "main": [
+        [
+          {
+            "node": "PAUSA ENTRE PRODUTOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MARCA COMO VERIFICADO": {
+      "main": [
+        [
+          {
+            "node": "CONTA: sem alteracao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CONTA: sem alteracao": {
+      "main": [
+        [
+          {
+            "node": "PAUSA ENTRE PRODUTOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MARCA COMO INDISPONIVEL": {
+      "main": [
+        [
+          {
+            "node": "CONTA: indisponivel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CONTA: indisponivel": {
+      "main": [
+        [
+          {
+            "node": "PAUSA ENTRE PRODUTOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REGISTRA FALHA TEMPORARIA": {
+      "main": [
+        [
+          {
+            "node": "CONTA: falha temporaria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CONTA: falha temporaria": {
+      "main": [
+        [
+          {
+            "node": "PAUSA ENTRE PRODUTOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PAUSA ENTRE PRODUTOS": {
+      "main": [
+        [
+          {
+            "node": "LOOP PRODUTOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MARCA COMO REVISAO MANUAL": {
+      "main": [
+        [
+          {
+            "node": "CONTA: revisao manual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CONTA: revisao manual": {
+      "main": [
+        [
+          {
+            "node": "PAUSA ENTRE PRODUTOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ACIONA A CADA 8 MIN DE 9 AS 22": {
+      "main": [
+        [
+          {
+            "node": "BUSCA COOKIE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7559f5da-0b34-43b7-be33-7bf3a34d8694",
+  "meta": {
+    "instanceId": "1182daeaff41f6cf72ca57285ef248ea6e8434a230bc2c7aabafbf923adf27bd"
+  },
+  "nodeGroups": [],
+  "id": "O1JyJ00bMUkFjgHS",
+  "tags": []
+}

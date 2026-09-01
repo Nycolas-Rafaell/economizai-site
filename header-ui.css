@@ -30,9 +30,41 @@ html {
 .top-nav .nav-account,
 .common-nav .account-login,
 .common-nav .admin-link,
+.common-nav .common-cart-link,
 .top-nav .profile-trigger,
 .common-nav .common-profile-trigger {
   min-height: 40px;
+}
+
+.common-cart-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 40px;
+  border: 1px solid var(--yellow);
+  border-radius: 8px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 19px;
+  line-height: 1;
+}
+.common-cart-link:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.cart-count {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 2px solid #171717;
+  border-radius: 999px;
+  background: #e63c35;
+  color: #fff;
+  font: 800 10px/1 Sora,Arial,sans-serif;
 }
 
 /* Mesmo comportamento de categorias usado na página de ofertas. */

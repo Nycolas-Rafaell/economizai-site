@@ -1485,7 +1485,7 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'GET' && url.pathname === '/api/alerts') {
       const authentication = await requireUser(request);
       if (!authentication.ok) return sendJson(response, authentication.status, { message: authentication.message });
-      const rows = await supabaseRest(`user_price_alerts?select=offer_id,target_price,is_active,triggered_at&user_id=eq.${encodeURIComponent(authentication.user.id)}&order=created_at.desc`);
+      const rows = await supabaseRest(`user_price_alerts?select=offer_id,target_price,is_active,triggered_at,created_at&user_id=eq.${encodeURIComponent(authentication.user.id)}&order=created_at.desc`);
       const ids = await getExternalOfferIds('user_price_alerts', authentication.user.id);
       return sendJson(response, 200, { alerts: rows.map((row, index) => ({ ...row, externalProductId: ids[index] || null })) });
     }
@@ -1496,9 +1496,10 @@ const server = http.createServer(async (request, response) => {
       const offerId = await getDatabaseOfferId(decodeURIComponent(alertMatch[1]));
       if (!offerId) return sendJson(response, 404, { message: 'Oferta não encontrada.' });
       if (request.method === 'DELETE') { await supabaseRest(`user_price_alerts?user_id=eq.${encodeURIComponent(authentication.user.id)}&offer_id=eq.${encodeURIComponent(offerId)}`, { method: 'DELETE', prefer: 'return=minimal' }); return sendJson(response, 200, { ok: true }); }
-      const { targetPrice } = await readBody(request); const target = Number(String(targetPrice).replace(',', '.'));
+      const { targetPrice, isActive = true } = await readBody(request); const target = Number(String(targetPrice).replace(',', '.'));
       if (!Number.isFinite(target) || target <= 0) return sendJson(response, 400, { message: 'Informe um preço de alerta válido.' });
-      await supabaseRest('user_price_alerts?on_conflict=user_id,offer_id', { method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal', body: [{ user_id: authentication.user.id, offer_id: offerId, target_price: target, is_active: true, triggered_at: null }] });
+      const active = isActive !== false;
+      await supabaseRest('user_price_alerts?on_conflict=user_id,offer_id', { method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal', body: [{ user_id: authentication.user.id, offer_id: offerId, target_price: target, is_active: active, triggered_at: null }] });
       return sendJson(response, 201, { ok: true });
     }
 

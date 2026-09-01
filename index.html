@@ -203,7 +203,8 @@
     grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
     gap: 18px;
     padding-bottom: 60px;
-    align-items: stretch;
+    align-items: start;
+    grid-auto-rows: auto;
   }
 
   .card {
@@ -214,8 +215,8 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    min-height: 410px;
-    height: 100%;
+    min-height: 0;
+    height: auto;
     will-change: transform, opacity;
     transition: transform 0.15s ease, border-color 0.15s ease;
     opacity: 0;
@@ -252,26 +253,30 @@
   .discount-flag {
     position: static;
     display: inline-flex; align-items:center; justify-content:center;
-    min-height:30px;
+    min-height:28px;
     font-family: 'Sora', sans-serif;
     font-weight: 800;
-    font-size: 13px;
+    font-size: 11.5px;
     line-height: 1;
     letter-spacing:.01em;
-    padding: 6px 9px;
+    padding: 5px 7px;
     border:1px solid rgba(108,255,170,.54);
     border-radius:8px;
     color:#06170d;
     background:linear-gradient(135deg,#58e996,#20bd68);
     box-shadow:0 4px 12px rgba(32,189,104,.22);
     animation:none;
-    transform:translateY(-1px);
+    transform:none;
   }
   .discount-flag::after { content:' OFF'; margin-left:4px; font:inherit; letter-spacing:.01em; opacity:.9; }
   .favorite-button { position:absolute;right:10px;bottom:10px;z-index:2;display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(255,255,255,.34);border-radius:9px;background:rgba(14,14,15,.86);color:#fff;font-size:23px;line-height:1;cursor:pointer;transition:transform .18s ease,background .18s ease,color .18s ease,border-color .18s ease; }
   .favorite-button:hover { transform:scale(1.08);border-color:var(--yellow);color:var(--yellow); }
   .favorite-button.is-favorite { background:var(--yellow);border-color:var(--yellow);color:var(--black-ink); }
   .favorite-button.is-favorite:active { transform:scale(.9); }
+  .list-button { display:grid;place-items:center;width:100%;min-height:42px;margin:0;padding:9px 12px;border:1px solid var(--yellow);border-radius:8px;background:transparent;color:var(--yellow);font:800 12px/1.2 'Sora',sans-serif;cursor:pointer;transition:background .18s ease,color .18s ease,border-color .18s ease; }
+  .list-button:hover { background:#29230f;color:#ffd75f; }
+  .list-button.is-saved { background:#123c25;border-color:var(--yellow);color:#ffe173;box-shadow:inset 0 0 0 1px rgba(66,211,126,.18); }
+  .list-button.is-saved:hover { background:#18502f;color:#fff0a8; }
   .offer-badges { position:absolute; left:10px; bottom:10px; z-index:2; display:flex; flex-direction:column; align-items:flex-start; gap:6px; max-width:calc(100% - 62px); pointer-events:none; }
   .offer-badge { display:inline-flex; align-items:center; min-height:25px; padding:5px 8px; border-radius:6px; background:rgba(17,17,17,.9); border:1px solid rgba(255,255,255,.18); color:#f3f3f3; font:800 10px 'Sora',sans-serif; line-height:1.15; box-shadow:0 3px 12px rgba(0,0,0,.24); }
   .offer-badge.best-price { border-color:rgba(52,199,120,.72); color:#a7efc5; }
@@ -300,16 +305,21 @@
     letter-spacing: 0.03em;
   }
 
-  .card-body { padding: 14px 15px 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  .card-body { padding: 15px; display: flex; flex-direction: column; gap: 10px; flex: 1; min-height:0; }
 
   .card-title {
-    font-size: 13.5px;
-    font-weight: 500;
+    display:-webkit-box;
+    overflow:hidden;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:3;
+    height:55px;
+    font-family:'Sora',sans-serif;
+    font-size: 13px;
+    font-weight: 700;
     line-height: 1.35;
     color: var(--text-primary);
-    min-height: 55px;
   }
-  .card-rating { display:flex; align-items:center; gap:6px; min-height:18px; color:var(--text-muted); font-size:12px; line-height:1; }
+  .card-rating { display:flex; align-items:center; gap:6px; height:20px; min-height:20px; overflow:hidden; color:var(--text-muted); font:500 11.5px/1 'Inter',sans-serif; white-space:nowrap; }
   .card-rating .rating-star { color:var(--yellow); font-size:16px; line-height:1; }
   .card-rating strong { color:var(--text-primary); font-size:12px; }
   .card-rating .rating-count { color:var(--text-muted); }
@@ -321,35 +331,46 @@
     gap: 2px;
     padding-top: 4px;
     border-top: 1px dashed var(--border-soft);
+    height: 70px;
+    min-height: 70px;
+    overflow: hidden;
+    justify-content: center;
   }
   .price-old-row { display: flex; align-items: center; gap: 6px; }
   .price-old-label { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
   .price-old { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-muted); text-decoration: line-through; }
 
-  .price-new-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 8px; margin-top: 2px; min-width: 0; }
+  .price-new-row { display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;align-items:center;gap:6px;margin-top:2px;min-width:0;width:100%; }
   .price-new-label { font-size: 10.5px; color: var(--yellow); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; }
-  .price-new { min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 23px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
-  .price-new-row .discount-flag { flex: 0 0 auto; white-space: nowrap; }
+  .price-new { min-width:0;overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:clamp(18px,1.65vw,21px);font-weight:700;color:var(--yellow);white-space:nowrap;letter-spacing:-.035em; }
+  .price-new-row .discount-flag { grid-column:3;justify-self:end;white-space:nowrap; }
   .coupon-callout {
-    display:flex; align-items:flex-start; gap:8px;
-    padding:8px 10px;
+    display:flex; align-items:center; gap:10px;
+    padding:10px 12px;
     border:1px solid rgba(52,199,120,.58);
-    border-radius:8px;
-    background:rgba(52,199,120,.11);
-    color:#baf3d1;
-    font:700 11px/1.35 'Sora',sans-serif;
+    border-radius:9px;
+    background:linear-gradient(135deg,rgba(52,199,120,.15),rgba(52,199,120,.08));
+    color:#c9f7dc;
+    height:73px;
+    min-height:73px;
+    overflow:hidden;
+    font:800 12.5px/1.35 'Sora',sans-serif;
   }
-  .coupon-callout::before { content:'🎟️'; flex:0 0 auto; }
+  .coupon-callout::before { content:'🎟️'; display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;border:1px solid rgba(255,196,45,.48);border-radius:7px;background:rgba(255,196,45,.12);font-size:18px;line-height:1; }
+  .coupon-callout.no-coupon { border-color:rgba(239,90,80,.72);background:linear-gradient(135deg,rgba(239,90,80,.16),rgba(239,90,80,.08));color:#ffb8b3; }
+  .coupon-callout.no-coupon::before { border-color:rgba(239,90,80,.58);background:rgba(239,90,80,.14); }
 
   .card-cta {
-    margin-top: 2px;
-    text-align: center;
-    font-size: 13.5px;
-    font-weight: 700;
-    padding: 10px;
-    border-radius: 7px;
+    display:grid;
+    place-items:center;
+    width:100%;
+    min-height:42px;
+    margin-top: 0;
+    padding: 9px 12px;
+    border-radius: 8px;
     background: var(--yellow);
     color: var(--black-ink);
+    font:800 12px/1.2 'Sora',sans-serif;
   }
   .card:hover .card-cta { filter: brightness(1.08); }
 
@@ -370,14 +391,20 @@
     font-size: 14px;
     display: none;
   }
-  .offers-pagination { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin:6px 0 42px; }
+  .offers-pagination { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;width:calc(100% - 238px);max-width:none;margin:18px 0 48px 238px;padding:18px 22px;border:1px solid var(--border-soft);border-radius:14px;background:linear-gradient(155deg,#171717,#121212);box-shadow:0 12px 30px rgba(0,0,0,.22); }
   .offers-pagination[hidden] { display:none; }
-  .pagination-button, .pagination-ellipsis { min-width:38px; height:36px; padding:0 10px; border:1px solid var(--border-soft); border-radius:8px; background:var(--bg-panel); color:var(--text-primary); font:700 13px 'Inter',sans-serif; }
-  .pagination-button { cursor:pointer; }
-  .pagination-button:hover:not(:disabled), .pagination-button.active { border-color:var(--yellow); background:var(--yellow); color:var(--black-ink); }
-  .pagination-button:disabled { opacity:.42; cursor:not-allowed; }
-  .pagination-ellipsis { display:grid; place-items:center; min-width:26px; border-color:transparent; background:transparent; color:var(--text-muted); }
-  .pagination-summary { width:100%; text-align:center; color:var(--text-muted); font-size:12px; margin-top:3px; }
+  .pagination-controls { display:flex;align-items:center;justify-content:center;gap:8px;max-width:100%; }
+  .pagination-button, .pagination-ellipsis { display:grid;place-items:center;min-width:42px;height:42px;padding:0 12px;border:1px solid #343434;border-radius:9px;background:#1e1e1e;color:var(--text-primary);font:800 13px 'Sora',sans-serif; }
+  .pagination-button { cursor:pointer;transition:transform .15s ease,border-color .15s ease,background .15s ease,color .15s ease; }
+  .pagination-button:hover:not(:disabled) { transform:translateY(-1px);border-color:var(--yellow);color:var(--yellow);background:#29230f; }
+  .pagination-button.active { border-color:var(--yellow);background:var(--yellow);color:var(--black-ink);box-shadow:0 5px 16px rgba(255,196,45,.2); }
+  .pagination-button:disabled { opacity:.32;cursor:not-allowed; }
+  .pagination-nav { min-width:96px; }
+  .pagination-ellipsis { min-width:24px;padding:0;border-color:transparent;background:transparent;color:#7f7f7f;font-size:17px; }
+  .pagination-summary { display:flex;align-items:center;justify-content:center;gap:10px 18px;flex-wrap:wrap;width:100%;margin:0;padding-top:12px;border-top:1px solid #2c2c2c;text-align:center;color:var(--text-muted);font:500 11.5px 'Inter',sans-serif; }
+  .pagination-summary strong { color:#eee;font-weight:800; }
+  @media(max-width:780px){.offers-pagination{width:100%;margin-left:0}}
+  @media(max-width:520px){.offers-pagination{width:100%;padding:14px 10px}.pagination-controls{gap:5px}.pagination-button,.pagination-ellipsis{min-width:38px;height:40px;padding:0 9px}.pagination-nav{min-width:40px;width:40px;font-size:0}.pagination-nav.previous::before{content:'←';font-size:16px}.pagination-nav.next::before{content:'→';font-size:16px}.pagination-summary{gap:6px 12px;font-size:11px}}
 
   footer {
     border-top: 1px solid var(--border-soft);
@@ -423,6 +450,8 @@
   .top-nav [hidden], .side-panel [hidden] { display: none !important; }
   .nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
   .nav-account { background: transparent; border: 1px solid var(--yellow); color: var(--yellow); }
+  .nav-cart { position: relative; min-width: 42px !important; width: 42px; height: 40px; padding: 0 !important; justify-content:center; font-size: 19px; }
+  .nav-cart-count { position:absolute;top:-7px;right:-7px;display:grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border:2px solid var(--bg-panel);border-radius:999px;background:#e63c35;color:#fff;font:800 10px/1 'Sora',sans-serif; }
   .profile-menu { position: relative; }
   .profile-trigger { min-width: auto !important; background: transparent; border: 1px solid var(--yellow); color: var(--yellow); }
   .nav-avatar { width: 28px; height: 28px; object-fit: cover; border-radius: 6px; }
@@ -541,6 +570,7 @@
   }
 
 </style>
+<link rel="stylesheet" href="responsive-site.css">
 </head>
 <body>
 
@@ -568,9 +598,10 @@
     <div class="nav-right">
       <a class="nav-btn nav-account" id="accountMenuLink" href="login.html">Entrar</a>
       <a class="nav-btn nav-account" id="adminMenuLink" href="analytics.html" hidden>Painel admin</a>
+      <a class="nav-btn nav-cart" id="cartMenuLink" href="alertas.html" aria-label="Abrir minha lista de ofertas" title="Minha lista de ofertas" hidden><span aria-hidden="true">🛒</span><strong class="nav-cart-count" id="cartItemCount" aria-label="0 itens salvos">0</strong></a>
       <div class="profile-menu" id="profileMenu" hidden>
         <button class="nav-btn profile-trigger" id="profileMenuButton" type="button" aria-haspopup="true" aria-expanded="false" onclick="alternarMenuPerfil(event)"><img class="nav-avatar" id="navAvatar" alt=""><span id="navUserName"></span>⌄</button>
-        <div class="profile-dropdown" id="profileDropdown" hidden><a href="conta.html">Minha conta</a><a href="favoritos.html">Meus favoritos</a><a href="alertas.html">Meus Alertas</a><button id="logoutMenuButton" type="button">Sair</button></div>
+        <div class="profile-dropdown" id="profileDropdown" hidden><a href="conta.html">Minha conta</a><a href="favoritos.html">Meus favoritos</a><a href="alertas.html">Minha lista de ofertas</a><button id="logoutMenuButton" type="button">Sair</button></div>
       </div>
     </div>
   </div>
@@ -857,10 +888,12 @@
         const name = document.getElementById('navUserName');
         const drawerLink = document.getElementById('accountDrawerLink');
         const adminLink = document.getElementById('adminMenuLink');
+        const cartLink = document.getElementById('cartMenuLink');
         const adminDrawerLink = document.getElementById('adminDrawerLink');
 
         if (accountLink) accountLink.hidden = true;
         if (profile) profile.hidden = false;
+        if (cartLink) cartLink.hidden = false;
         if (avatar) avatar.src = sessao.avatarUrl || `assets/avatars/${sessao.avatarId || 'avatar-1'}.png`;
         if (name) name.textContent = sessao.displayName || sessao.name || String(sessao.email || '').split('@')[0];
         if (drawerLink) { drawerLink.href = 'conta.html'; drawerLink.textContent = 'Minha conta'; }
@@ -1056,9 +1089,10 @@
       } catch { /* cache é apenas uma melhoria, nunca bloqueia a vitrine */ }
     }
 
-    function botaoPagina(texto, pagina, { active = false, disabled = false, label = '' } = {}) {
+    function botaoPagina(texto, pagina, { active = false, disabled = false, label = '', className = '' } = {}) {
       const botao = document.createElement('button');
       botao.type = 'button'; botao.className = 'pagination-button'; botao.textContent = texto;
+      if (className) botao.classList.add(...className.split(' '));
       botao.classList.toggle('active', active); botao.disabled = disabled;
       botao.setAttribute('aria-label', label || `Ir para página ${pagina}`);
       if (active) botao.setAttribute('aria-current', 'page');
@@ -1078,19 +1112,31 @@
       paginacaoOfertas.hidden = totalItens <= porPagina;
       if (paginacaoOfertas.hidden) return { porPagina, totalPaginas };
 
-      paginacaoOfertas.append(botaoPagina('←', paginaAtual - 1, { disabled: paginaAtual === 1, label: 'Página anterior' }));
-      const paginas = totalPaginas <= 7
-        ? Array.from({ length: totalPaginas }, (_, index) => index + 1)
-        : [1, ...(paginaAtual > 4 ? ['…'] : []), ...[paginaAtual - 1, paginaAtual, paginaAtual + 1].filter((pagina) => pagina > 1 && pagina < totalPaginas), ...(paginaAtual < totalPaginas - 3 ? ['…'] : []), totalPaginas];
+      const controles = document.createElement('div'); controles.className = 'pagination-controls';
+      controles.append(botaoPagina('← Anterior', paginaAtual - 1, { disabled: paginaAtual === 1, label: 'Página anterior', className: 'pagination-nav previous' }));
+      const compacta = window.matchMedia('(max-width:700px)').matches;
+      const faixaInicial = compacta ? 3 : 6;
+      let paginas;
+      if (totalPaginas <= (compacta ? 5 : 9)) {
+        paginas = Array.from({ length: totalPaginas }, (_, index) => index + 1);
+      } else if (paginaAtual <= faixaInicial - 1) {
+        paginas = [...Array.from({ length: faixaInicial }, (_, index) => index + 1), '…', totalPaginas];
+      } else if (paginaAtual >= totalPaginas - faixaInicial + 2) {
+        paginas = [1, '…', ...Array.from({ length: faixaInicial }, (_, index) => totalPaginas - faixaInicial + index + 1)];
+      } else {
+        const raio = compacta ? 1 : 2;
+        paginas = [1, '…', ...Array.from({ length: raio * 2 + 1 }, (_, index) => paginaAtual - raio + index), '…', totalPaginas];
+      }
       [...new Set(paginas)].forEach((pagina) => {
         if (pagina === '…') {
-          const ellipsis = document.createElement('span'); ellipsis.className = 'pagination-ellipsis'; ellipsis.textContent = '…'; ellipsis.setAttribute('aria-hidden', 'true'); paginacaoOfertas.append(ellipsis);
-        } else paginacaoOfertas.append(botaoPagina(String(pagina), pagina, { active: pagina === paginaAtual }));
+          const ellipsis = document.createElement('span'); ellipsis.className = 'pagination-ellipsis'; ellipsis.textContent = '…'; ellipsis.setAttribute('aria-hidden', 'true'); controles.append(ellipsis);
+        } else controles.append(botaoPagina(String(pagina), pagina, { active: pagina === paginaAtual }));
       });
-      paginacaoOfertas.append(botaoPagina('→', paginaAtual + 1, { disabled: paginaAtual === totalPaginas, label: 'Próxima página' }));
+      controles.append(botaoPagina('Próxima →', paginaAtual + 1, { disabled: paginaAtual === totalPaginas, label: 'Próxima página', className: 'pagination-nav next' }));
+      paginacaoOfertas.append(controles);
       const inicio = (paginaAtual - 1) * porPagina + 1;
       const fim = Math.min(totalItens, paginaAtual * porPagina);
-      const resumo = document.createElement('p'); resumo.className = 'pagination-summary'; resumo.textContent = `Mostrando ${inicio}–${fim} de ${totalItens} ofertas`;
+      const resumo = document.createElement('p'); resumo.className = 'pagination-summary'; resumo.innerHTML = `<span>Exibindo <strong>${inicio}–${fim}</strong> de <strong>${totalItens}</strong> ofertas</span><span>Página <strong>${paginaAtual}</strong> de <strong>${totalPaginas}</strong></span>`;
       paginacaoOfertas.append(resumo);
       return { porPagina, totalPaginas };
     }
@@ -1242,6 +1288,14 @@
 
     let favoriteIds = new Set();
     let favoritesEnabled = false;
+    let listIds = new Set();
+    let listEnabled = false;
+    function atualizarContagemCarrinho() {
+      const badge = document.getElementById('cartItemCount');
+      const total = listIds.size;
+      if (badge) { badge.textContent = total > 99 ? '99+' : String(total); badge.setAttribute('aria-label', `${total} itens salvos`); }
+      window.dispatchEvent(new CustomEvent('economizai:list-changed', { detail: { count: total } }));
+    }
 
     function atualizarBotaoFavorito(button, active) {
       button.classList.toggle('is-favorite', active);
@@ -1251,13 +1305,16 @@
     }
 
     async function carregarFavoritos() {
-      try {
-        const response = await fetch('/api/favorites', { cache: 'no-store' });
-        if (!response.ok) return;
-        const data = await response.json();
-        favoriteIds = new Set(data.ids || []);
-        favoritesEnabled = true;
-      } catch { /* visitante continua vendo a estrela vazia */ }
+      const [favoritesResult, listResult] = await Promise.allSettled([
+        fetch('/api/favorites', { cache: 'no-store' }),
+        fetch('/api/alerts', { cache: 'no-store' }),
+      ]);
+      if (favoritesResult.status === 'fulfilled' && favoritesResult.value.ok) {
+        const data = await favoritesResult.value.json(); favoriteIds = new Set(data.ids || []); favoritesEnabled = true;
+      }
+      if (listResult.status === 'fulfilled' && listResult.value.ok) {
+        const data = await listResult.value.json(); listIds = new Set((data.alerts || []).map((item) => String(item.externalProductId))); listEnabled = true; atualizarContagemCarrinho();
+      }
     }
 
     function criarBotaoFavorito(offerId) {
@@ -1275,6 +1332,33 @@
           if (isFavorite) favoriteIds.delete(offerId); else favoriteIds.add(offerId);
           atualizarBotaoFavorito(button, !isFavorite);
         } catch { alert('Não foi possível atualizar seus favoritos agora.'); }
+        finally { button.disabled = false; }
+      });
+      return button;
+    }
+
+    function criarBotaoLista(oferta) {
+      const button = document.createElement('button');
+      const update = () => {
+        const saved = listIds.has(String(oferta.id));
+        button.classList.toggle('is-saved', saved); button.textContent = saved ? '✓ Já no carrinho' : 'Adicionar ao carrinho';
+        button.title = saved ? 'Remover da lista de ofertas' : 'Salvar na lista de ofertas';
+        button.setAttribute('aria-label', button.title);
+      };
+      button.type = 'button'; button.className = 'list-button'; update();
+      button.addEventListener('click', async (event) => {
+        event.preventDefault(); event.stopPropagation();
+        if (!listEnabled) return window.location.assign('login.html');
+        const saved = listIds.has(String(oferta.id)); button.disabled = true;
+        try {
+          const response = await fetch(`/api/alerts/${encodeURIComponent(oferta.id)}`, saved
+            ? { method: 'DELETE' }
+            : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetPrice: oferta.currentPrice, isActive: false }) });
+          if (!response.ok) throw new Error();
+          if (saved) listIds.delete(String(oferta.id)); else listIds.add(String(oferta.id));
+          atualizarContagemCarrinho();
+          update(); window.EconomizaiUI?.toast(saved ? 'Produto removido da lista.' : 'Produto salvo na sua lista.', 'success');
+        } catch { window.EconomizaiUI?.toast('Não foi possível atualizar sua lista agora.', 'error'); }
         finally { button.disabled = false; }
       });
       return button;
@@ -1335,13 +1419,16 @@
           const loja = oferta.marketplace === 'shopee' ? 'Shopee' : 'Mercado Livre';
           const paginaProduto = escaparHtml(card.dataset.productUrl);
           const cupom = String(oferta.coupon || '').trim();
-          const cupomHtml = cupom ? `<div class="coupon-callout" title="Cupom confirmado na última verificação">${escaparHtml(cupom)}</div>` : '';
+          const cupomHtml = cupom
+            ? `<div class="coupon-callout" title="Cupom confirmado na última verificação">${escaparHtml(cupom)}</div>`
+            : '<div class="coupon-callout no-coupon" title="Nenhum cupom foi confirmado na última verificação">Cupom não disponível no momento</div>';
           card.innerHTML = `<div class="card-media">${oferta.image ? `<img src="${escaparHtml(oferta.image)}" alt="${escaparHtml(oferta.title)}" loading="lazy" decoding="async">` : 'Imagem não disponível'}${desconto}<span class="store-badge">${loja}</span></div><div class="card-body"><div class="card-title">${escaparHtml(oferta.title)}</div><div class="price-block">${precoAnterior}<div class="price-new-row"><span class="price-new-label">Por</span><span class="price-new">${formatarPreco(oferta.currentPrice)}</span></div></div>${cupomHtml}<a class="card-cta" href="${paginaProduto}">Ver oferta</a></div>`;
           adicionarAvaliacaoAoCard(card, oferta.rating, oferta.quantitySold, oferta.reviewCount);
           moverDescontoParaPreco(card);
           adicionarSelosAoCard(card, { ...oferta, discountPct: descontoPct }, maiorDesconto);
           indicarOfertaIndisponivel(card, oferta);
           card.querySelector('.card-media').append(criarBotaoFavorito(oferta.id));
+          card.querySelector('.card-body').append(criarBotaoLista(oferta));
           gradeOfertas.append(card);
           registrarCardClicavel(card);
         });

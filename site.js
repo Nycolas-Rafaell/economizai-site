@@ -1,4 +1,5 @@
 function toggleMenu(){document.getElementById('siteMenu')?.classList.toggle('open')}
+if(!document.querySelector('link[href="responsive-site.css"]')){const responsiveStyles=document.createElement('link');responsiveStyles.rel='stylesheet';responsiveStyles.href='responsive-site.css';document.head.append(responsiveStyles)}
 async function contactSubmit(event){
   event.preventDefault();
   const form=event.currentTarget, status=document.getElementById('formStatus');

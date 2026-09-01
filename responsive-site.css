@@ -1,0 +1,107 @@
+/* Camada responsiva compartilhada das páginas públicas do Economizaí. */
+html, body { max-width:100%; overflow-x:hidden; }
+img, svg, video, canvas { max-width:100%; }
+button, input, select, textarea, a { -webkit-tap-highlight-color:transparent; }
+table { max-width:100%; }
+
+@media (max-width: 900px) {
+  .top-nav { flex-wrap:wrap; }
+  .common-nav-right, .nav-right { margin-left:auto; }
+  .content, .page, .wrap, .activity, .favorites, .account, .stores-content { width:100%; }
+  .product { grid-template-columns:minmax(280px, 360px) minmax(0, 1fr); gap:24px; }
+  .details { gap:14px; }
+  .footer-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .footer-grid > div:first-child { grid-column:1/-1; }
+  .table-wrap, .admin-table-wrap { overflow-x:auto; overscroll-behavior-inline:contain; }
+}
+
+@media (max-width: 700px) {
+  body { font-size:15px; }
+  .ticker { font-size:10px; padding:6px 12px; }
+  .top-nav, .top-nav.common-nav { position:sticky; top:0; display:flex; flex-wrap:wrap; gap:8px; padding:9px 14px; }
+  .common-nav > .nav-btn, .common-nav > .nav-link, .top-nav > .nav-btn, .top-nav > .nav-link { min-height:40px; }
+  .common-nav-right, .nav-right { display:flex; align-items:center; gap:8px; min-width:0; }
+  .common-profile-trigger, .profile-trigger { min-width:40px; max-width:min(210px,calc(100vw - 86px)); height:40px; }
+  .common-profile-dropdown, .profile-dropdown { position:fixed; top:100px; right:12px; width:min(260px,calc(100vw - 24px)); z-index:100; }
+  .drawer, .side-panel { width:min(330px,90vw); max-width:90vw; overflow-y:auto; }
+
+  .hero, .stores-hero { padding:40px 16px 34px; }
+  .hero h1, .stores-hero h1 { font-size:clamp(28px,9vw,38px); }
+  .content, .page, .wrap, .activity, .favorites, .account, .stores-content { padding-left:16px; padding-right:16px; }
+  .intro-card, .article-card, .contact-card, .panel, .price-panel, .insight, .chart-panel { padding:18px; }
+
+  .product, .details { grid-template-columns:1fr!important; }
+  .product { gap:22px!important; }
+  .product .media, .media { width:100%; max-width:520px; margin-inline:auto; }
+  .price-summary { align-items:flex-start!important; flex-direction:column!important; gap:12px!important; }
+  .current-price-line { gap:8px; }
+  .now { font-size:clamp(28px,9vw,34px)!important; }
+  .commercial-metrics { justify-content:flex-start!important; }
+  .actions, .product-tools { display:grid!important; grid-template-columns:1fr; gap:9px; }
+  .actions > *, .product-tools > *, .buy { width:100%!important; min-height:44px; }
+  .history { grid-template-columns:1fr!important; gap:10px; }
+  .chart-panel { padding:18px!important; }
+  .chart { min-width:0; height:190px!important; }
+  .chart-head { align-items:flex-start!important; flex-direction:column; }
+
+  .list-toolbar { position:static!important; align-items:stretch!important; flex-direction:column; }
+  .toolbar-actions { display:grid!important; grid-template-columns:1fr 1fr; }
+  .activity .grid { grid-template-columns:1fr!important; }
+  .activity .card { min-height:0!important; }
+  .activity .card-media { height:230px!important; flex-basis:230px!important; }
+  .list-options { grid-template-columns:minmax(82px,.7fr) minmax(0,1.3fr)!important; }
+
+  .contact-grid, .row { grid-template-columns:1fr!important; }
+  .profile-top { align-items:center!important; }
+  .actions { align-items:stretch; }
+  .actions .button { display:grid; place-items:center; width:100%; min-height:44px; text-align:center; }
+
+  .store-heading { align-items:flex-start!important; flex-direction:column; }
+  .store-tabs { display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; }
+  .store-tab { justify-content:center; min-width:0; }
+  .offers-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:12px!important; }
+  .offers-grid .offer-card { min-width:0; }
+
+  dialog, .alert-dialog { width:calc(100% - 24px)!important; max-width:440px; max-height:calc(100dvh - 24px); overflow:auto; margin:auto; }
+  .alert-dialog-actions { display:grid!important; grid-template-columns:1fr 1fr; }
+  .alert-dialog-actions button { min-height:42px; }
+  .footer-grid { grid-template-columns:1fr 1fr!important; gap:24px 18px; }
+}
+
+@media (max-width: 520px) {
+  .common-profile-trigger span, .profile-trigger span { display:none; }
+  .common-profile-trigger, .profile-trigger { width:42px; padding:6px!important; justify-content:center; }
+  .common-profile-trigger img, .profile-trigger img { width:27px; height:27px; }
+  .common-profile-dropdown, .profile-dropdown { top:92px; }
+  .common-cart-link, .nav-cart { width:42px!important; min-width:42px!important; }
+  .hero, .stores-hero { padding-top:34px; }
+  .activity h1, .favorites h1, .account h1 { font-size:clamp(26px,9vw,32px)!important; line-height:1.15; }
+  .toolbar-actions, .alert-dialog-actions { grid-template-columns:1fr!important; }
+  .list-options { grid-template-columns:1fr!important; }
+  .card-actions { grid-template-columns:1fr!important; }
+  .activity .card-media { height:210px!important; flex-basis:210px!important; }
+  .product .media { aspect-ratio:1; min-height:0!important; }
+  .price-panel { padding:17px!important; }
+  .coupon-panel { align-items:flex-start!important; }
+  .legend { gap:8px!important; font-size:11px!important; }
+  .chart-labels { font-size:10px!important; }
+  .profile-top { flex-direction:column; text-align:center; }
+  .avatar-options { grid-template-columns:repeat(3,minmax(0,1fr))!important; }
+  .store-tabs, .offers-grid { grid-template-columns:1fr!important; }
+  .offers-grid .offer-media { height:210px!important; min-height:210px!important; max-height:210px!important; flex-basis:210px!important; }
+  .footer-grid { grid-template-columns:1fr!important; text-align:center; }
+  .footer-grid > div:first-child { grid-column:auto!important; }
+  .footer-col a { padding:6px 0; }
+}
+
+@media (max-width: 360px) {
+  .top-nav, .top-nav.common-nav { padding-inline:10px; }
+  .content, .page, .wrap, .activity, .favorites, .account, .stores-content { padding-left:12px; padding-right:12px; }
+  .common-nav-right, .nav-right { width:100%; justify-content:flex-end; }
+  .price-new, .current-price, .now { font-size:25px!important; }
+}
+
+@media (hover:none) and (pointer:coarse) {
+  button, a, input, select { min-height:42px; }
+  .card:hover, .offer-card:hover { transform:none!important; }
+}

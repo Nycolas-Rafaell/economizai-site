@@ -1,6 +1,16 @@
 // Cabeçalho e rodapé comuns. Novas páginas devem usar <header data-site-header></header>
 // e <footer data-site-footer></footer> para receber a navegação automaticamente.
 const socialLinks = { YouTube: 'https://www.youtube.com/@reiwo', Instagram: 'https://www.instagram.com/reiwooficial/', Twitch: 'https://www.twitch.tv/reiwooficial', TikTok: 'https://www.tiktok.com/@reiwooficial_' };
+if (!document.querySelector('link[href="responsive-site.css"]')) {
+  const responsiveStyles = document.createElement('link');
+  responsiveStyles.rel = 'stylesheet'; responsiveStyles.href = 'responsive-site.css';
+  document.head.append(responsiveStyles);
+}
+if (/\/produto(?:-|\.|$)/i.test(window.location.pathname) && !document.querySelector('link[href="product-page-polish.css"]')) {
+  const productStyles = document.createElement('link');
+  productStyles.rel = 'stylesheet'; productStyles.href = 'product-page-polish.css';
+  document.head.append(productStyles);
+}
 let categoryGroups = window.ECONOMIZAI_CATEGORIES || [
   { id: 'games', label: 'Games', subs: [['Console', 'Consoles'], ['Jogo', 'Jogos'], ['Controle', 'Controles'], ['Cadeira gamer', 'Cadeiras gamer'], ['Acessório gamer', 'Acessórios gamer']] },
   { id: 'hardware', label: 'Hardware', subs: [['SSD', 'SSD e armazenamento'], ['Memória RAM', 'Memórias RAM'], ['Placa de vídeo', 'Placas de vídeo'], ['Processador', 'Processadores'], ['Placa-mãe', 'Placas-mãe'], ['Fonte', 'Fontes']] },
@@ -62,7 +72,13 @@ if (!header) {
 }
 
 if (header) {
-  header.innerHTML = `<div class="ticker">ECONOMIZE MAIS • COMPRE MELHOR • AS MELHORES OFERTAS, SEMPRE!</div><nav class="top-nav common-nav"><a class="nav-link nav-back nav-previous" href="index.html" aria-label="Voltar para a página anterior">← Página anterior</a><a class="nav-link nav-back nav-offers" href="index.html">⌂ Ofertas</a><button class="nav-btn" type="button" onclick="toggleMenu()">☰ Categorias</button><a class="nav-link" href="contato.html">Contato</a><div class="common-nav-right"><a class="nav-link account-login" href="login.html">Entrar</a><a class="nav-link admin-link" href="analytics.html" hidden>Painel admin</a><div class="common-profile" hidden><button class="common-profile-trigger" type="button" aria-expanded="false"><img alt=""><span></span>⌄</button><div class="common-profile-dropdown" hidden><a href="conta.html">Minha conta</a><a href="favoritos.html">Meus favoritos</a><a href="alertas.html">Meus Alertas</a><button type="button">Sair</button></div></div></div></nav><aside class="drawer category-drawer" id="siteMenu"><button class="drawer-close" onclick="toggleMenu()" aria-label="Fechar">×</button><h2>Categorias</h2>${categoryMenu()}<h3>Links</h3><a href="lojas.html">Ofertas por loja</a><a href="contato.html">Contato</a>${links(socialLinks)}</aside>`;
+  header.innerHTML = `<div class="ticker">ECONOMIZE MAIS • COMPRE MELHOR • AS MELHORES OFERTAS, SEMPRE!</div><nav class="top-nav common-nav"><a class="nav-link nav-back nav-previous" href="index.html" aria-label="Voltar para a página anterior">← Página anterior</a><a class="nav-link nav-back nav-offers" href="index.html">⌂ Ofertas</a><button class="nav-btn" type="button" onclick="toggleMenu()">☰ Categorias</button><a class="nav-link" href="contato.html">Contato</a><div class="common-nav-right"><a class="nav-link account-login" href="login.html">Entrar</a><a class="nav-link admin-link" href="analytics.html" hidden>Painel admin</a><a class="common-cart-link" href="alertas.html" aria-label="Abrir minha lista de ofertas" title="Minha lista de ofertas" hidden><span aria-hidden="true">🛒</span><strong class="cart-count" aria-label="0 itens salvos">0</strong></a><div class="common-profile" hidden><button class="common-profile-trigger" type="button" aria-expanded="false"><img alt=""><span></span>⌄</button><div class="common-profile-dropdown" hidden><a href="conta.html">Minha conta</a><a href="favoritos.html">Meus favoritos</a><a href="alertas.html">Minha lista de ofertas</a><button type="button">Sair</button></div></div></div></nav><aside class="drawer category-drawer" id="siteMenu"><button class="drawer-close" onclick="toggleMenu()" aria-label="Fechar">×</button><h2>Categorias</h2>${categoryMenu()}<h3>Links</h3><a href="lojas.html">Ofertas por loja</a><a href="contato.html">Contato</a>${links(socialLinks)}</aside>`;
+  const updateCartCount = (count) => {
+    const badge = header.querySelector('.cart-count');
+    const total = Math.max(0, Number(count) || 0);
+    if (badge) { badge.textContent = total > 99 ? '99+' : String(total); badge.setAttribute('aria-label', `${total} itens salvos`); }
+  };
+  window.addEventListener('economizai:list-changed', (event) => updateCartCount(event.detail?.count));
   header.querySelector('.nav-previous')?.addEventListener('click', goToPreviousPage);
   header.querySelector('.common-nav > a[href="contato.html"]')?.remove();
   fetch('/api/auth/session', { cache: 'no-store' }).then(async (response) => {
@@ -72,6 +88,8 @@ if (header) {
     const profile = header.querySelector('.common-profile');
     const trigger = header.querySelector('.common-profile-trigger');
     const dropdown = header.querySelector('.common-profile-dropdown');
+    header.querySelector('.common-cart-link').hidden = false;
+    fetch('/api/alerts', { cache: 'no-store' }).then((result) => result.ok ? result.json() : null).then((data) => { if (data) updateCartCount(new Set((data.alerts || []).map((item) => String(item.externalProductId))).size); }).catch(() => {});
     profile.hidden = false;
     trigger.querySelector('img').src = session.avatarUrl || `assets/avatars/${session.avatarId || 'avatar-1'}.png`;
     trigger.querySelector('span').textContent = session.displayName || session.name || session.email.split('@')[0];
