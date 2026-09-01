@@ -1321,7 +1321,7 @@ async function sendStatic(request, response, pathname, searchParams, origin) {
   const isStaticAsset = !type.startsWith('text/html');
   const etag = `W/\"${fileInfo.size.toString(16)}-${Math.floor(fileInfo.mtimeMs).toString(16)}\"`;
   const cacheHeaders = isStaticAsset
-    ? { 'Cache-Control': 'public, max-age=600, must-revalidate', ETag: etag, Vary: 'Accept-Encoding' }
+    ? { 'Cache-Control': 'public, max-age=0, must-revalidate', ETag: etag, Vary: 'Accept-Encoding' }
     : { 'Cache-Control': 'no-store' };
   if (isStaticAsset && String(request.headers['if-none-match'] || '') === etag) {
     response.writeHead(304, cacheHeaders);
@@ -1390,7 +1390,7 @@ const server = http.createServer(async (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host}`);
   if (request.method === 'GET' && url.pathname === '/assets/logo-economizai-completo.png') {
     const etag = getFullLogoEtag();
-    const headers = { 'Cache-Control': 'public, max-age=600, must-revalidate', ETag: etag, Vary: 'Accept-Encoding' };
+    const headers = { 'Cache-Control': 'public, max-age=0, must-revalidate', ETag: etag, Vary: 'Accept-Encoding' };
     if (String(request.headers['if-none-match'] || '') === etag) {
       response.writeHead(304, headers);
       return response.end();
