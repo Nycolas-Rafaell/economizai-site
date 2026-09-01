@@ -1356,6 +1356,12 @@ async function sendStatic(request, response, pathname, searchParams, origin) {
     if (!/\bshare-tools-mobile\.css\b/.test(html)) {
       html = html.replace(/<\/head\s*>/i, '<link rel="stylesheet" href="share-tools-mobile.css"></head>');
     }
+    if (!/data-economizai-theme-bootstrap/.test(html)) {
+      html = html.replace(/<\/head\s*>/i, `<script data-economizai-theme-bootstrap>(function(){try{var t=localStorage.getItem('economizai:theme');document.documentElement.dataset.theme=t==='light'?'light':'dark';document.documentElement.style.colorScheme=t==='light'?'light':'dark'}catch(e){document.documentElement.dataset.theme='dark'}})();</script></head>`);
+    }
+    if (!/\btheme\.css\b/.test(html)) {
+      html = html.replace(/<\/head\s*>/i, '<link rel="stylesheet" href="theme.css"></head>');
+    }
     // A renovação visual especial permanece apenas na página de login.
     if (requested === '/login.html' && !/\bdesign-polish\.css\b/.test(html)) {
       html = html.replace(/<\/head\s*>/i, '<link rel="stylesheet" href="design-polish.css"></head>');
@@ -1369,6 +1375,7 @@ async function sendStatic(request, response, pathname, searchParams, origin) {
     if (!/\bpassword-visibility\.js\b/.test(html)) html = html.replace(/<\/body\s*>/i, '<script src="password-visibility.js"></script></body>');
     if (!/\bui-feedback\.js\b/.test(html)) html = html.replace(/<\/body\s*>/i, '<script src="ui-feedback.js"></script></body>');
     if (!/\bshare-tools\.js\b/.test(html)) html = html.replace(/<\/body\s*>/i, '<script src="share-tools.js"></script></body>');
+    if (!/\btheme\.js\b/.test(html)) html = html.replace(/<\/body\s*>/i, '<script src="theme.js"></script></body>');
     const privateOrAdminPage = /^\/(?:admin(?:-cards|-users)?|reportes|analytics|login|conta)\.html$/i.test(requested);
     if (!privateOrAdminPage && !/\banalytics\.js\b/.test(html)) html = html.replace(/<\/body\s*>/i, '<script src="analytics.js"></script></body>');
     const legacyOfferAnalytics = {
